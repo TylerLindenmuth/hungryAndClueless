@@ -3,8 +3,35 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
+      // Root alias — resolves to my-app/ root (for app/, assets/, etc.)
       "@/*": [
         "./*"
+      ],
+      
+      // Scoped aliases matching the src/ structure we built
+      "@/app/*": [
+        "./app/*"
+      ],
+      "@/src/*": [
+        "./src/*"
+      ],
+      "@/lib/*": [
+        "./src/lib/*"
+      ],
+      "@/components/*": [
+        "./src/components/*"
+      ],
+      "@/ui/*": [
+        "./src/components/ui/*"
+      ],
+      "@/theme/*": [
+        "./src/theme/*"
+      ],
+      "@/constants/*": [
+        "./constants/*"
+      ],
+      "@/assets/*": [
+        "./assets/*"
       ]
     }
   },
@@ -12,6 +39,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
   ]
 }
