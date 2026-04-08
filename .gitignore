@@ -1,0 +1,4 @@
+.ssh/
+.env
+node_modules/
+
