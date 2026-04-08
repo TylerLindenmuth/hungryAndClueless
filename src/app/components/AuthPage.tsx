@@ -1,9 +1,18 @@
 import { useState } from 'react';
 import type { User } from '../types';
 import { DarkModeToggle } from './DarkModeToggle';
+import { buildPath } from './Path';
+import { storeToken } from '../tokenStorage';
+import { jwtDecode } from 'jwt-decode';
 
 interface AuthPageProps {
   onLogin: (user: User) => void;
+}
+
+interface JwtPayload {
+  userId: string;
+  name: string;
+  email: string;
 }
 
 export function AuthPage({ onLogin }: AuthPageProps) {
@@ -12,8 +21,9 @@ export function AuthPage({ onLogin }: AuthPageProps) {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -22,35 +32,77 @@ export function AuthPage({ onLogin }: AuthPageProps) {
       return;
     }
 
-    const usersData = localStorage.getItem('users');
-    const users: User[] = usersData ? JSON.parse(usersData) : [];
+    setIsSubmitting(true);
 
-    if (isLogin) {
-      const user = users.find(u => u.email === email);
-      if (user) {
+    try {
+      if (isLogin) {
+        const obj = { email, password };
+        const js = JSON.stringify(obj);
+
+        const response = await fetch(buildPath('api/login'), {
+          method: 'POST',
+          body: js,
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const res = JSON.parse(await response.text());
+
+        if (res.error && res.error.length > 0) {
+          setError(res.error);
+          return;
+        }
+
+        const { accessToken } = res;
+        storeToken(accessToken);
+        const decoded = jwtDecode<JwtPayload>(accessToken);
+
+        const user: User = {
+          id: decoded.userId,
+          name: decoded.name,
+          email: decoded.email,
+          meals: []
+        };
+
         localStorage.setItem('user_data', JSON.stringify(user));
         onLogin(user);
+
       } else {
-        setError('Invalid email or password');
-      }
-    } else {
-      const existingUser = users.find(u => u.email === email);
-      if (existingUser) {
-        setError('User already exists');
-        return;
+        const obj = { name, email, password };
+        const js = JSON.stringify(obj);
+
+        const response = await fetch(buildPath('api/register'), {
+          method: 'POST',
+          body: js,
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const res = JSON.parse(await response.text());
+
+        if (res.error && res.error.length > 0) {
+          setError(res.error);
+          return;
+        }
+
+        const { accessToken } = res;
+        storeToken(accessToken);
+        const decoded = jwtDecode<JwtPayload>(accessToken);
+
+        const user: User = {
+          id: decoded.userId,
+          name: decoded.name,
+          email: decoded.email,
+          meals: []
+        };
+
+        localStorage.setItem('user_data', JSON.stringify(user));
+        onLogin(user);
       }
 
-      const newUser: User = {
-        id: Date.now().toString(),
-        email,
-        name,
-        meals: []
-      };
-
-      users.push(newUser);
-      localStorage.setItem('users', JSON.stringify(users));
-      localStorage.setItem('user_data', JSON.stringify(newUser));
-      onLogin(newUser);
+    } catch (err: any) {
+      setError('Something went wrong. Please try again.');
+      console.log(err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -104,9 +156,10 @@ export function AuthPage({ onLogin }: AuthPageProps) {
 
           <button
             type="submit"
-            className="w-full bg-primary text-primary-foreground py-2 rounded-lg hover:opacity-90 transition-opacity"
+            disabled={isSubmitting}
+            className="w-full bg-primary text-primary-foreground py-2 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {isLogin ? 'Login' : 'Sign Up'}
+            {isSubmitting ? 'Please wait...' : isLogin ? 'Login' : 'Sign Up'}
           </button>
         </form>
 
