@@ -1,0 +1,47 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@11.11.0
+2 info using node@v24.14.1
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/root/.npmrc
+5 silly config load:file:/usr/local/etc/npmrc
+6 verbose title npm install cors
+7 verbose argv "install" "cors"
+8 verbose logfile logs-max:10 dir:/root/.npm/_logs/2026-04-07T16_17_04_850Z-
+9 verbose logfile /root/.npm/_logs/2026-04-07T16_17_04_850Z-debug-0.log
+10 silly logfile done cleaning log files
+11 silly packumentCache heap:271581184 maxSize:67895296 maxEntrySize:33947648
+12 silly idealTree buildDeps
+13 silly fetch manifest cors@*
+14 silly packumentCache full:https://registry.npmjs.org/cors cache-miss
+15 http fetch GET 200 https://registry.npmjs.org/cors 107ms (cache miss)
+16 silly packumentCache full:https://registry.npmjs.org/cors set size:undefined disposed:false
+17 silly placeDep ROOT cors@2.8.6 OK for:  want: *
+18 silly fetch manifest object-assign@^4
+19 silly packumentCache full:https://registry.npmjs.org/object-assign cache-miss
+20 http fetch GET 200 https://registry.npmjs.org/object-assign 58ms (cache miss)
+21 silly packumentCache full:https://registry.npmjs.org/object-assign set size:undefined disposed:false
+22 silly fetch manifest vary@^1
+23 silly packumentCache full:https://registry.npmjs.org/vary cache-miss
+24 http fetch GET 200 https://registry.npmjs.org/vary 41ms (cache miss)
+25 silly packumentCache full:https://registry.npmjs.org/vary set size:undefined disposed:false
+26 silly placeDep ROOT object-assign@4.1.1 OK for: cors@2.8.6 want: ^4
+27 silly placeDep ROOT vary@1.1.2 OK for: cors@2.8.6 want: ^1
+28 silly reify moves {}
+29 http cache object-assign@https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz 1ms (cache hit)
+30 http cache vary@https://registry.npmjs.org/vary/-/vary-1.1.2.tgz 0ms (cache hit)
+31 http cache cors@https://registry.npmjs.org/cors/-/cors-2.8.6.tgz 0ms (cache hit)
+32 silly tarball no local data for object-assign@https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz. Extracting by manifest.
+33 silly tarball no local data for vary@https://registry.npmjs.org/vary/-/vary-1.1.2.tgz. Extracting by manifest.
+34 silly tarball no local data for cors@https://registry.npmjs.org/cors/-/cors-2.8.6.tgz. Extracting by manifest.
+35 http fetch GET 200 https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz 52ms (cache miss)
+36 http fetch GET 200 https://registry.npmjs.org/vary/-/vary-1.1.2.tgz 89ms (cache miss)
+37 http fetch GET 200 https://registry.npmjs.org/cors/-/cors-2.8.6.tgz 91ms (cache miss)
+38 silly ADD node_modules/vary
+39 silly ADD node_modules/object-assign
+40 silly ADD node_modules/cors
+41 verbose cwd /root
+42 verbose os Linux 6.8.0-71-generic
+43 verbose node v24.14.1
+44 verbose npm  v11.11.0
+45 verbose exit 0
+46 info ok
