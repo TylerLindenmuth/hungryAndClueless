@@ -111,4 +111,4 @@ export type { SwitchProps } from '../components/ui/Switch';
 export { Progress } from '../components/ui/Progress';
 export type { ProgressProps } from '../components/ui/Progress';
 
-export { cs } from '../lib/utils';
+export { cn } from '../lib/utils';

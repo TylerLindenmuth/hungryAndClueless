@@ -1,180 +1,224 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, TextInput, Pressable,
-  StyleSheet, KeyboardAvoidingView,
-  Platform, ScrollView, ActivityIndicator,
-  SafeAreaView,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useColorScheme } from 'react-native';
-import { saveToken } from '@/lib/tokenStorage';
-import { useThemeMode } from '@/theme/ThemeContext';  
-import { Ionicons } from '@expo/vector-icons';         
+import { jwtDecode } from 'jwt-decode';
+import { buildPath } from '../../src/api';
+import { storeToken, storeUser } from '../../src/lib/tokenStorage';
+import type { User } from '../../src/types/index.ts';
 
-export default function AuthPage() {
-  const router  = useRouter();
-  const { isDark, toggle } = useThemeMode();     
-  const bg      = isDark ? '#09090b' : '#ffffff';
-  const surface = isDark ? '#18181b' : '#f4f4f5';
-  const text    = isDark ? '#fafafa' : '#09090b';
-  const muted   = isDark ? '#a1a1aa' : '#71717a';
-  const border  = isDark ? '#27272a' : '#e4e4e7';
+interface JwtPayload {
+  userId: string;
+  name: string;
+  email: string;
+}
 
-  const [mode,     setMode]     = useState<'login' | 'signup'>('login');
-  const [name,     setName]     = useState('');
-  const [email,    setEmail]    = useState('');
+interface AuthPageProps {
+  onLogin: (user: User) => void;
+}
+
+export function AuthPage({ onLogin }: AuthPageProps) {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState('');
+  const [name, setName] = useState('');
+  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleSubmit() {
-    if (!email || !password) { setError('Please fill in all fields.'); return; }
-    if (mode === 'signup' && !name) { setError('Please enter your name.'); return; }
-    setLoading(true); setError('');
-    try {
-      await new Promise(r => setTimeout(r, 800)); // TODO: replace with real API
-      await saveToken('mock-token-' + Date.now());
-      router.replace('/(app)/Dashboard');
-    } catch {
-      setError('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
+  const handleSubmit = async () => {
+    setError('');
+    if (!email || !password || (!isLogin && !name)) {
+      setError('Please fill in all fields');
+      return;
     }
-  }
+
+    setIsSubmitting(true);
+    try {
+      const route = isLogin ? 'api/login' : 'api/register';
+      const body = isLogin ? { email, password } : { name, email, password };
+
+      const response = await fetch(buildPath(route), {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const res = await response.json();
+      if (res.error && res.error.length > 0) {
+        setError(res.error);
+        return;
+      }
+
+      const { accessToken } = res;
+      await storeToken(accessToken);
+      const decoded = jwtDecode<JwtPayload>(accessToken);
+
+      const user: User = {
+        id: decoded.userId,
+        name: decoded.name,
+        email: decoded.email,
+        meals: [],
+      };
+
+      await storeUser(user);
+      onLogin(user);
+    } catch (err: any) {
+      setError('Something went wrong. Please try again.');
+      console.log(err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
-      <KeyboardAvoidingView
-        style={s.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <ScrollView
-          contentContainerStyle={s.scroll}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* App title */}
-          <View style={s.heroWrap}>
-            {/* Dark mode toggle — top right */}
-            <Pressable onPress={toggle} style={s.toggleBtn} hitSlop={8}>
-              <Ionicons
-                name={isDark ? 'sunny-outline' : 'moon-outline'}
-                size={20}
-                color={muted}
-              />
-            </Pressable>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <View style={styles.card}>
+          <Text style={styles.title}>What Do I Want to Eat?</Text>
+          <Text style={styles.subtitle}>Never be indecisive about meals again</Text>
 
-            <Text style={[s.heroTitle, { color: text }]}>What do I want to eat?</Text>
-            <Text style={[s.heroSub, { color: muted }]}>Never be indecisive about meals again</Text>
+          {!isLogin && (
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Name</Text>
+              <TextInput
+                style={styles.input}
+                value={name}
+                onChangeText={setName}
+                placeholder="Your name"
+                placeholderTextColor="#9ca3af"
+                autoCapitalize="words"
+              />
+            </View>
+          )}
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              value={email}
+              onChangeText={setEmail}
+              placeholder="your@email.com"
+              placeholderTextColor="#9ca3af"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
           </View>
 
-          {/* Form card */}
-          <View style={[s.card, { backgroundColor: surface, borderColor: border }]}>
-            <Text style={[s.cardTitle, { color: text }]}>
-              {mode === 'login' ? 'Sign in to your account' : 'Create an account'}
-            </Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Password</Text>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              placeholderTextColor="#9ca3af"
+              secureTextEntry
+              autoCapitalize="none"
+            />
+          </View>
 
-            {error ? (
-              <View style={s.errorBox}>
-                <Text style={s.errorText}>{error}</Text>
-              </View>
-            ) : null}
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
-            {/* Name — signup only */}
-            {mode === 'signup' && (
-              <View style={s.field}>
-                <Text style={[s.label, { color: text }]}>Name</Text>
-                <TextInput
-                  style={[s.input, { backgroundColor: bg, borderColor: border, color: text }]}
-                  placeholder="Your name"
-                  placeholderTextColor={muted}
-                  value={name}
-                  onChangeText={setName}
-                  autoCapitalize="words"
-                />
-              </View>
-            )}
-
-            {/* Email */}
-            <View style={s.field}>
-              <Text style={[s.label, { color: text }]}>Email</Text>
-              <TextInput
-                style={[s.input, { backgroundColor: bg, borderColor: border, color: text }]}
-                placeholder="your@email.com"
-                placeholderTextColor={muted}
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-
-            {/* Password */}
-            <View style={s.field}>
-              <Text style={[s.label, { color: text }]}>Password</Text>
-              <TextInput
-                style={[s.input, { backgroundColor: bg, borderColor: border, color: text }]}
-                placeholder="••••••••"
-                placeholderTextColor={muted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
-
-            {/* Submit */}
-            <Pressable
-              style={({ pressed }) => [s.btn, pressed && { opacity: 0.85 }]}
-              onPress={handleSubmit}
-              disabled={loading}
-            >
-              {loading
-                ? <ActivityIndicator color="#fff" />
-                : <Text style={s.btnText}>
-                    {mode === 'login' ? 'Sign in' : 'Create account'}
-                  </Text>
-              }
-            </Pressable>
-
-            {/* Toggle */}
-            <View style={s.toggleRow}>
-              <Text style={[s.toggleText, { color: muted }]}>
-                {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+          <TouchableOpacity
+            style={[styles.button, isSubmitting && styles.buttonDisabled]}
+            onPress={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>
+                {isLogin ? 'Login' : 'Sign Up'}
               </Text>
-              <Pressable onPress={() => { setMode(m => m === 'login' ? 'signup' : 'login'); setError(''); }}>
-                <Text style={s.link}>{mode === 'login' ? 'Sign up' : 'Sign in'}</Text>
-              </Pressable>
-            </View>
+            )}
+          </TouchableOpacity>
+
+          <View style={styles.switchRow}>
+            <Text style={styles.switchText}>
+              {isLogin ? "Don't have an account? " : 'Already have an account? '}
+            </Text>
+            <TouchableOpacity
+              onPress={() => {
+                setIsLogin(!isLogin);
+                setError('');
+              }}
+            >
+              <Text style={styles.switchLink}>{isLogin ? 'Sign up' : 'Login'}</Text>
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
-const s = StyleSheet.create({
-  safe:       { flex: 1 },
-  flex:       { flex: 1 },
-  scroll:     { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  heroWrap:   { alignItems: 'center', marginBottom: 32, gap: 8 },
-  heroTitle:  { fontSize: 26, fontWeight: '700', textAlign: 'center' },
-  heroSub:    { fontSize: 14, textAlign: 'center' },
-  card:       { borderRadius: 16, borderWidth: 1, padding: 24, gap: 16 },
-  cardTitle:  { fontSize: 18, fontWeight: '600' },
-  errorBox:   { backgroundColor: '#fef2f2', borderRadius: 8, padding: 12 },
-  errorText:  { color: '#ef4444', fontSize: 13 },
-  field:      { gap: 6 },
-  label:      { fontSize: 13, fontWeight: '500' },
-  input:      { height: 44, borderWidth: 1, borderRadius: 8, paddingHorizontal: 14, fontSize: 15 },
-  btn:        { backgroundColor: '#2563eb', borderRadius: 10, height: 48, alignItems: 'center', justifyContent: 'center' },
-  btnText:    { color: '#fff', fontWeight: '700', fontSize: 15 },
-  toggleRow:  { flexDirection: 'row', justifyContent: 'center', flexWrap: 'wrap' },
-  toggleText: { fontSize: 13 },
-  link:       { fontSize: 13, color: '#2563eb', fontWeight: '600' },
-  toggleBtn: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    padding: 8,
-  }
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f9fafb' },
+  scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  inputGroup: { marginBottom: 16 },
+  label: { fontSize: 14, color: '#374151', marginBottom: 6, fontWeight: '500' },
+  input: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 16,
+    color: '#111827',
+    backgroundColor: '#f9fafb',
+  },
+  error: { color: '#ef4444', fontSize: 13, marginBottom: 12 },
+  button: {
+    backgroundColor: '#f97316',
+    borderRadius: 10,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  buttonDisabled: { opacity: 0.6 },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 20,
+    flexWrap: 'wrap',
+  },
+  switchText: { fontSize: 14, color: '#6b7280' },
+  switchLink: { fontSize: 14, color: '#f97316', fontWeight: '600' },
 });

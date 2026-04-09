@@ -1,134 +1,118 @@
-import { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, Pressable,
-  StyleSheet, SafeAreaView,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  SafeAreaView,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useThemeMode } from '../../src/theme/ThemeContext';
-import { tokenStorage, getUser } from '@/lib/tokenStorage';
-import { STORAGE_KEYS } from '@/lib/constants';
-import type { User } from '@/lib/types';
+import { MealLibrary } from './MealLibrary';
+import { Quiz } from './Quiz';
+import type { User } from '../../src/types/index.ts';
 
-export default function DashboardScreen() {
-  const router     = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const { isDark, toggle } = useThemeMode();
-  const bg      = isDark ? '#09090b' : '#ffffff';
-  const surface = isDark ? '#18181b' : '#f4f4f5';
-  const text    = isDark ? '#fafafa' : '#09090b';
-  const muted   = isDark ? '#a1a1aa' : '#71717a';
-  const border  = isDark ? '#27272a' : '#e4e4e7';
+interface DashboardProps {
+  user: User;
+  onLogout: () => void;
+  onUpdateUser: (user: User) => void;
+}
 
-  useEffect(() => {
-    getUser().then(setUser).catch(() => {});
-  }, []);
+type Tab = 'library' | 'quiz';
 
-  async function handleLogout() {
-    await tokenStorage.remove(STORAGE_KEYS.AUTH_TOKEN);
-    router.replace('/(auth)/AuthPage');
-  }
-
-  const cards = [
-    {
-      label: 'My Meals',
-      sub:   'View and manage your saved meal library',
-      icon:  'restaurant-outline' as const,
-      route: '/(app)/MealLibrary',
-    },
-    {
-      label: 'Meal Packages',
-      sub:   'Browse curated meal package deals',
-      icon:  'grid-outline' as const,
-      route: '/(app)/MealPackages',
-    },
-    {
-      label: 'What should I eat?',
-      sub:   'Take the quiz to get a personalised recommendation',
-      icon:  'help-circle-outline' as const,
-      route: '/(app)/Quiz',
-    },
-  ];
+export function Dashboard({ user, onLogout, onUpdateUser }: DashboardProps) {
+  const [activeTab, setActiveTab] = useState<Tab>('library');
 
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
-      <View style={[s.header, { borderBottomColor: border }]}>
-        <View style={{ flex: 1 }}>
-          <Text style={[s.title, { color: text }]}>What do I want to eat?</Text>
-          <Text style={[s.sub, { color: muted }]}>
-            Welcome back{user?.name ? `, ${user.name}` : ''}!
-          </Text>
+    <SafeAreaView style={styles.container}>
+      {/* Header */}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.appTitle}>What Do I Want to Eat?</Text>
+          <Text style={styles.welcomeText}>Welcome back, {user.name}!</Text>
         </View>
-
-        <Pressable
-            onPress={toggle}
-            hitSlop={8}
-            style={({ pressed }) => [
-              {
-                marginRight: 12,
-                padding: 6,
-                borderRadius: 8,
-                backgroundColor: pressed ? border : 'transparent',
-              },
-            ]}
-          >
-            <Ionicons
-              name={isDark ? 'sunny-outline' : 'moon-outline'}
-              size={22}
-              color={muted}
-            />
-          </Pressable>
-
-        <Pressable onPress={handleLogout} hitSlop={8}>
-          <Ionicons name="log-out-outline" size={22} color={muted} />
-        </Pressable>
+        <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
+          <Ionicons name="log-out-outline" size={22} color="#6b7280" />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={s.scroll}>
-        {cards.map((c, i) => (
-          <Pressable
-            key={i}
-            onPress={() => router.push(c.route as any)}
-            style={({ pressed }) => [
-              s.card,
-              { backgroundColor: surface, borderColor: border },
-              pressed && { opacity: 0.85 },
-            ]}
-          >
-            <View style={[s.iconWrap, { backgroundColor: isDark ? '#1e3a5f' : '#eff6ff' }]}>
-              <Ionicons name={c.icon} size={24} color="#2563eb" />
-            </View>
-            <View style={s.cardBody}>
-              <Text style={[s.cardLabel, { color: text }]}>{c.label}</Text>
-              <Text style={[s.cardSub,   { color: muted }]}>{c.sub}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={muted} />
-          </Pressable>
-        ))}
-      </ScrollView>
+      {/* Tab bar */}
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'library' && styles.tabActive]}
+          onPress={() => setActiveTab('library')}
+        >
+          <Ionicons
+            name="book-outline"
+            size={18}
+            color={activeTab === 'library' ? '#fff' : '#6b7280'}
+          />
+          <Text style={[styles.tabText, activeTab === 'library' && styles.tabTextActive]}>
+            My Meals ({user.meals.length})
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'quiz' && styles.tabActive]}
+          onPress={() => setActiveTab('quiz')}
+        >
+          <Ionicons
+            name="help-circle-outline"
+            size={18}
+            color={activeTab === 'quiz' ? '#fff' : '#6b7280'}
+          />
+          <Text style={[styles.tabText, activeTab === 'quiz' && styles.tabTextActive]}>
+            What Should I Eat?
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      <View style={styles.content}>
+        {activeTab === 'library' ? (
+          <MealLibrary user={user} onUpdateUser={onUpdateUser} />
+        ) : (
+          <Quiz user={user} />
+        )}
+      </View>
     </SafeAreaView>
   );
 }
 
-const s = StyleSheet.create({
-  safe:      { flex: 1 },
-  header:    {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f9fafb' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
-  title:     { fontSize: 18, fontWeight: '700' },
-  sub:       { fontSize: 12, marginTop: 2 },
-  scroll:    { padding: 16, gap: 8 },
-  card:      {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    padding: 12, borderRadius: 10, borderWidth: 1,
+  appTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  welcomeText: { fontSize: 13, color: '#6b7280', marginTop: 2 },
+  logoutBtn: { padding: 8 },
+  tabBar: {
+    flexDirection: 'row',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 10,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e5e7eb',
   },
-  iconWrap:  {
-    width: 38, height: 38, borderRadius: 8,
-    alignItems: 'center', justifyContent: 'center',
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#f3f4f6',
   },
-  cardBody:  { flex: 1, gap: 2 },
-  cardLabel: { fontSize: 14, fontWeight: '600' },
-  cardSub:   { fontSize: 11 },
+  tabActive: { backgroundColor: '#f97316' },
+  tabText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
+  tabTextActive: { color: '#fff' },
+  content: { flex: 1 },
 });

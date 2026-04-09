@@ -1,45 +1,65 @@
-import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { router } from 'expo-router';
-import { getToken } from '@/lib/tokenStorage';
+import React, { useState, useEffect } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { AuthPage } from './(auth)/AuthPage';
+import { Dashboard } from './(app)/Dashboard';
+import { retrieveToken, retrieveUser, clearToken, storeUser } from '../src/lib/tokenStorage';
+import type { User } from '../src/types/index.ts';
 
-/**
- * Entry point. Reads the stored auth token and redirects immediately:
- *   token found  → (tabs) — the main tab navigator
- *   no token     → (app)/AuthPage — login screen
- *
- * The ActivityIndicator is shown only for the brief async moment before
- * the redirect fires; users should never see it for more than ~100ms.
- */
-export default function Index() {
+export default function RootLayout() {
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    async function redirect() {
+    const restoreSession = async () => {
       try {
-        const token = await getToken();
-        if (token) {
-          router.replace('/(tabs)');
-        } else {
-          router.replace('/(auth)/AuthPage');
+        const [savedUser, token] = await Promise.all([retrieveUser(), retrieveToken()]);
+        if (savedUser && token) {
+          setCurrentUser(JSON.parse(savedUser));
         }
-      } catch {
-        router.replace('/(auth)/AuthPage');
+      } catch (e) {
+        console.log('Session restore error:', e);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    redirect();
+    };
+    restoreSession();
   }, []);
 
+  const handleLogin = (user: User) => {
+    setCurrentUser(user);
+  };
+
+  const handleLogout = async () => {
+    await clearToken();
+    setCurrentUser(null);
+  };
+
+  const handleUpdateUser = async (updatedUser: User) => {
+    setCurrentUser(updatedUser);
+    await storeUser(updatedUser);
+  };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#f97316" />
+      </View>
+    );
+  }
+
+  if (!currentUser) {
+    return <AuthPage onLogin={handleLogin} />;
+  }
+
   return (
-    <View style={styles.container}>
-      <ActivityIndicator size="large" color="#2563EB" />
-    </View>
+    <Dashboard
+      user={currentUser}
+      onLogout={handleLogout}
+      onUpdateUser={handleUpdateUser}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F9FAFB',
-  },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' },
 });

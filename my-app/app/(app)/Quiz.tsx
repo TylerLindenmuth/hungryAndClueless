@@ -1,174 +1,265 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, Pressable, StyleSheet,
-  SafeAreaView, ScrollView,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Animated,
 } from 'react-native';
-import { useColorScheme } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import type { User, QuizAnswers } from '../../src/types/index.ts';
 
-interface Question {
-  id: number;
-  question: string;
-  options: string[];
+interface QuizProps {
+  user: User;
 }
 
-const QUESTIONS: Question[] = [
-  { id: 1, question: "How much time do you have?",         options: ['< 15 min', '30 min', '1 hour', 'All the time I need'] },
-  { id: 2, question: "What cuisine are you in the mood for?", options: ['American', 'Mexican', 'Italian', 'Asian', 'Surprise me'] },
-  { id: 3, question: "How hungry are you?",                options: ['Light snack', 'Medium meal', 'I\'m starving'] },
-  { id: 4, question: "Cooking at home or going out?",      options: ['Cooking at home', 'Going out', 'Delivery', 'Either is fine'] },
-  { id: 5, question: "Any dietary restrictions?",          options: ['None', 'Vegetarian', 'Vegan', 'Gluten-free'] },
-];
+export function Quiz({ user }: QuizProps) {
+  const [step, setStep] = useState(0);
+  const [answers, setAnswers] = useState<QuizAnswers>({});
+  const [results, setResults] = useState<string[]>([]);
+  const [selectedMeal, setSelectedMeal] = useState<string | null>(null);
 
-const RESULTS = [
-  "McDonald's — fast, satisfying, and close by!",
-  "Spaghetti Bolognese — comforting home-cooked meal",
-  "Sushi — fresh and healthy option",
-  "Tacos — quick and flavourful",
-];
+  const categories = Array.from(new Set(user.meals.map(m => m.category)));
+  const cuisines = Array.from(new Set(user.meals.map(m => m.cuisine).filter(Boolean) as string[]));
 
-export default function QuizScreen() {
-  const isDark  = useColorScheme() === 'dark';
-  const bg      = isDark ? '#09090b' : '#ffffff';
-  const surface = isDark ? '#18181b' : '#f4f4f5';
-  const text    = isDark ? '#fafafa' : '#09090b';
-  const muted   = isDark ? '#a1a1aa' : '#71717a';
-  const border  = isDark ? '#27272a' : '#e4e4e7';
+  const questions = [
+    {
+      question: 'What type of meal are you in the mood for?',
+      options: ['Any', ...categories],
+      key: 'category' as keyof QuizAnswers,
+    },
+    {
+      question: 'What cuisine sounds good?',
+      options: ['Any', ...cuisines],
+      key: 'cuisine' as keyof QuizAnswers,
+    },
+    {
+      question: 'How much time do you have?',
+      options: ['Any', 'Quick (under 15min)', 'Medium (15-30min)', 'Longer (30min+)'],
+      key: 'prepTime' as keyof QuizAnswers,
+    },
+  ];
 
-  const [step,      setStep]      = useState(0);        // 0 = intro
-  const [answers,   setAnswers]   = useState<number[]>([]);
-  const [selected,  setSelected]  = useState<number | null>(null);
-  const [result,    setResult]    = useState<string | null>(null);
-
-  const currentQ = QUESTIONS[step - 1];
-  const progress = step > 0 ? step / QUESTIONS.length : 0;
-
-  function handleStart() { setStep(1); setAnswers([]); setResult(null); }
-
-  function handleSelect(i: number) { setSelected(i); }
-
-  function handleNext() {
-    if (selected === null) return;
-    const newAnswers = [...answers, selected];
+  const handleAnswer = (value: string, key: keyof QuizAnswers) => {
+    const newAnswers = { ...answers, [key]: value === 'Any' ? undefined : value };
     setAnswers(newAnswers);
-    setSelected(null);
-    if (step >= QUESTIONS.length) {
-      const r = RESULTS[newAnswers[0] % RESULTS.length];
-      setResult(r);
-      setStep(QUESTIONS.length + 1);
+    if (step < questions.length - 1) {
+      setStep(step + 1);
     } else {
-      setStep(s => s + 1);
+      filterMeals(newAnswers);
     }
-  }
+  };
 
-  function handleRestart() { setStep(0); setAnswers([]); setSelected(null); setResult(null); }
+  const filterMeals = (finalAnswers: QuizAnswers) => {
+    let filtered = [...user.meals];
+    if (finalAnswers.category) filtered = filtered.filter(m => m.category === finalAnswers.category);
+    if (finalAnswers.cuisine) filtered = filtered.filter(m => m.cuisine === finalAnswers.cuisine);
+    if (finalAnswers.prepTime) {
+      const timeMap: Record<string, string[]> = {
+        'Quick (under 15min)': ['5min', '10min', '15min', 'quick'],
+        'Medium (15-30min)': ['20min', '25min', '30min'],
+        'Longer (30min+)': ['45min', '1hr', '1.5hr', '2hr', '3hr'],
+      };
+      const validTimes = timeMap[finalAnswers.prepTime] || [];
+      filtered = filtered.filter(m =>
+        m.prepTime && validTimes.some(t => m.prepTime?.toLowerCase().includes(t.toLowerCase()))
+      );
+    }
+    setResults(filtered.map(m => m.name));
+  };
 
-  // Intro
-  if (step === 0) {
+  const pickRandomMeal = () => {
+    if (results.length > 0) {
+      setSelectedMeal(results[Math.floor(Math.random() * results.length)]);
+    }
+  };
+
+  const resetQuiz = () => {
+    setStep(0);
+    setAnswers({});
+    setResults([]);
+    setSelectedMeal(null);
+  };
+
+  if (user.meals.length === 0) {
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
-        <View style={s.center}>
-          <Ionicons name="help-circle-outline" size={64} color="#2563eb" />
-          <Text style={[s.introTitle, { color: text }]}>What should I eat?</Text>
-          <Text style={[s.introSub, { color: muted }]}>
-            Answer {QUESTIONS.length} quick questions and we'll recommend the perfect meal for you right now.
-          </Text>
-          <Pressable style={s.startBtn} onPress={handleStart}>
-            <Text style={s.startBtnText}>Start quiz</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
+      <View style={styles.centered}>
+        <Ionicons name="restaurant-outline" size={48} color="#d1d5db" />
+        <Text style={styles.emptyText}>Add some meals to your library first!</Text>
+      </View>
     );
   }
 
-  // Result
-  if (result) {
+  if (results.length > 0) {
     return (
-      <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
-        <View style={s.center}>
-          <Ionicons name="checkmark-circle-outline" size={64} color="#22c55e" />
-          <Text style={[s.resultTitle, { color: text }]}>You should eat…</Text>
-          <View style={[s.resultCard, { backgroundColor: surface, borderColor: border }]}>
-            <Text style={[s.resultMeal, { color: text }]}>{result}</Text>
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentPadding}>
+        <Text style={styles.pageTitle}>Your Options</Text>
+
+        {selectedMeal ? (
+          <View style={styles.resultCard}>
+            <Ionicons name="sparkles" size={40} color="#fff" style={{ marginBottom: 12 }} />
+            <Text style={styles.resultLabel}>You should eat:</Text>
+            <Text style={styles.resultMeal}>{selectedMeal}</Text>
           </View>
-          <Pressable style={s.startBtn} onPress={handleRestart}>
-            <Text style={s.startBtnText}>Take quiz again</Text>
-          </Pressable>
+        ) : (
+          <>
+            <Text style={styles.optionsIntro}>
+              Based on your preferences, here are {results.length} option{results.length !== 1 ? 's' : ''}:
+            </Text>
+            <View style={styles.optionsGrid}>
+              {results.map((mealName, i) => (
+                <View key={i} style={styles.optionChip}>
+                  <Text style={styles.optionChipText}>{mealName}</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        <View style={styles.buttonRow}>
+          {!selectedMeal && (
+            <TouchableOpacity style={[styles.primaryBtn, { flex: 1, marginRight: 10 }]} onPress={pickRandomMeal}>
+              <Ionicons name="shuffle" size={18} color="#fff" />
+              <Text style={styles.primaryBtnText}>Pick One For Me!</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.secondaryBtn} onPress={resetQuiz}>
+            <Ionicons name="refresh" size={18} color="#374151" />
+            <Text style={styles.secondaryBtnText}>Start Over</Text>
+          </TouchableOpacity>
         </View>
-      </SafeAreaView>
+      </ScrollView>
     );
   }
 
-  // Question
+  const currentQuestion = questions[step];
+  const progress = ((step + 1) / questions.length) * 100;
+
   return (
-    <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.contentPadding}>
       {/* Progress bar */}
-      <View style={[s.progressTrack, { backgroundColor: surface }]}>
-        <View style={[s.progressFill, { width: `${progress * 100}%` as any }]} />
+      <View style={styles.progressMeta}>
+        <Text style={styles.progressLabel}>Question {step + 1} of {questions.length}</Text>
+        <Text style={styles.progressLabel}>{Math.round(progress)}%</Text>
+      </View>
+      <View style={styles.progressTrack}>
+        <View style={[styles.progressFill, { width: `${progress}%` as any }]} />
       </View>
 
-      <ScrollView contentContainerStyle={s.questionScroll}>
-        <Text style={[s.stepLabel, { color: muted }]}>
-          Question {step} of {QUESTIONS.length}
-        </Text>
-        <Text style={[s.question, { color: text }]}>{currentQ.question}</Text>
+      <Text style={styles.question}>{currentQuestion.question}</Text>
 
-        <View style={s.options}>
-          {currentQ.options.map((opt, i) => (
-            <Pressable
-              key={i}
-              onPress={() => handleSelect(i)}
-              style={[
-                s.option,
-                { backgroundColor: surface, borderColor: selected === i ? '#2563eb' : border },
-                selected === i && s.optionSelected,
-              ]}
-            >
-              <Text style={[s.optionText, { color: selected === i ? '#2563eb' : text }]}>
-                {opt}
-              </Text>
-              {selected === i && (
-                <Ionicons name="checkmark-circle" size={20} color="#2563eb" />
-              )}
-            </Pressable>
-          ))}
-        </View>
+      <View style={styles.optionsList}>
+        {currentQuestion.options.map(option => (
+          <TouchableOpacity
+            key={option}
+            style={styles.optionRow}
+            onPress={() => handleAnswer(option, currentQuestion.key)}
+          >
+            <Text style={styles.optionText}>{option}</Text>
+            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+          </TouchableOpacity>
+        ))}
+      </View>
 
-        <Pressable
-          onPress={handleNext}
-          style={[s.nextBtn, selected === null && s.nextBtnDisabled]}
-          disabled={selected === null}
-        >
-          <Text style={s.nextBtnText}>
-            {step === QUESTIONS.length ? 'See my result' : 'Next'}
-          </Text>
-          <Ionicons name="arrow-forward" size={18} color="#fff" />
-        </Pressable>
-      </ScrollView>
-    </SafeAreaView>
+      {step > 0 && (
+        <TouchableOpacity style={styles.backBtn} onPress={() => setStep(step - 1)}>
+          <Text style={styles.backBtnText}>← Back</Text>
+        </TouchableOpacity>
+      )}
+    </ScrollView>
   );
 }
 
-const s = StyleSheet.create({
-  safe:            { flex: 1 },
-  center:          { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 20 },
-  introTitle:      { fontSize: 26, fontWeight: '700', textAlign: 'center' },
-  introSub:        { fontSize: 14, textAlign: 'center', lineHeight: 22 },
-  startBtn:        { backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 14, paddingHorizontal: 40, marginTop: 8 },
-  startBtnText:    { color: '#fff', fontWeight: '700', fontSize: 16 },
-  progressTrack:   { height: 4, borderRadius: 999, marginHorizontal: 24, marginTop: 12 },
-  progressFill:    { height: 4, backgroundColor: '#2563eb', borderRadius: 999 },
-  questionScroll:  { padding: 24, gap: 20 },
-  stepLabel:       { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5 },
-  question:        { fontSize: 22, fontWeight: '700', lineHeight: 30 },
-  options:         { gap: 10 },
-  option:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderRadius: 12, borderWidth: 1.5 },
-  optionSelected:  { borderColor: '#2563eb', backgroundColor: '#eff6ff' },
-  optionText:      { fontSize: 15, fontWeight: '500', flex: 1 },
-  nextBtn:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#2563eb', borderRadius: 12, paddingVertical: 14, marginTop: 8 },
-  nextBtnDisabled: { opacity: 0.4 },
-  nextBtnText:     { color: '#fff', fontWeight: '700', fontSize: 16 },
-  resultTitle:     { fontSize: 24, fontWeight: '700', textAlign: 'center' },
-  resultCard:      { width: '100%', padding: 24, borderRadius: 16, borderWidth: 1, alignItems: 'center' },
-  resultMeal:      { fontSize: 18, fontWeight: '600', textAlign: 'center', lineHeight: 26 },
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  contentPadding: { padding: 16, paddingBottom: 40 },
+  centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
+  emptyText: { color: '#6b7280', fontSize: 16, textAlign: 'center', marginTop: 16 },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  resultCard: {
+    backgroundColor: '#f97316',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  resultLabel: { color: '#fff', fontSize: 16, opacity: 0.9, marginBottom: 8 },
+  resultMeal: { color: '#fff', fontSize: 28, fontWeight: '800', textAlign: 'center' },
+  optionsIntro: {
+    fontSize: 15,
+    color: '#374151',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
+  optionChip: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  optionChipText: { color: '#374151', fontSize: 14, fontWeight: '500' },
+  buttonRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 8 },
+  primaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f97316',
+    borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    gap: 8,
+    justifyContent: 'center',
+  },
+  primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  secondaryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  secondaryBtnText: { color: '#374151', fontWeight: '600', fontSize: 15 },
+  progressMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
+  progressLabel: { fontSize: 13, color: '#6b7280' },
+  progressTrack: {
+    height: 6,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 999,
+    marginBottom: 32,
+    overflow: 'hidden',
+  },
+  progressFill: { height: 6, backgroundColor: '#f97316', borderRadius: 999 },
+  question: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  optionsList: { gap: 12 },
+  optionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  optionText: { fontSize: 16, color: '#111827' },
+  backBtn: { alignItems: 'center', marginTop: 24 },
+  backBtnText: { color: '#6b7280', fontSize: 15 },
 });
