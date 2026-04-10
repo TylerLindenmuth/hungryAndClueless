@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
-import AuthPage from './(auth)/AuthPage';
-import Dashboard  from './(app)/Dashboard';
-import { retrieveToken, retrieveUser, clearToken, storeUser } from '../src/tokenStorage';
-import type { User } from '../src/types/index.ts';
+import { ThemeProvider } from './ThemeContext';                        
+import AuthPage from '../../app/(auth)/AuthPage';            
+import Dashboard from '../../app/(app)/Dashboard';
+import { retrieveToken, retrieveUser, clearToken, storeUser } from '../tokenStorage'; 
+import type { User } from '../types/index';
 
-export default function RootLayout() {
+function AppContent() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -25,9 +26,7 @@ export default function RootLayout() {
     restoreSession();
   }, []);
 
-  const handleLogin = (user: User) => {
-    setCurrentUser(user);
-  };
+  const handleLogin = (user: User) => setCurrentUser(user);
 
   const handleLogout = async () => {
     await clearToken();
@@ -57,6 +56,15 @@ export default function RootLayout() {
       onLogout={handleLogout}
       onUpdateUser={handleUpdateUser}
     />
+  );
+}
+
+// ThemeProvider wraps everything so every useTheme() call in the tree works
+export default function Root() {
+  return (
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
 

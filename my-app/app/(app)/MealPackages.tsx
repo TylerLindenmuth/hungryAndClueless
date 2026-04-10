@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { buildPath } from '../../src/api';
-import { retrieveToken, storeToken } from '../../src/lib/tokenStorage';
-import type { Meal } from '../../src/types/index.ts';
+import { retrieveToken, storeToken } from '../../src/tokenStorage';
+import type { Meal } from '../../src/types';
 
 interface Package {
   _id: string;
@@ -27,7 +27,7 @@ interface MealPackagesProps {
   onAddPackage: (meals: Meal[]) => void;
 }
 
-export function MealPackages({ visible, onClose, onAddPackage }: MealPackagesProps) {
+export default function MealPackages({ visible, onClose, onAddPackage }: MealPackagesProps) {
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
@@ -128,15 +128,7 @@ export function MealPackages({ visible, onClose, onAddPackage }: MealPackagesPro
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f9fafb' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    backgroundColor: '#fff',
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16, borderBottomWidth: 1, borderBottomColor: '#e5e7eb', backgroundColor: '#fff' },
   title: { fontSize: 20, fontWeight: '700', color: '#111827' },
   subtitle: { fontSize: 13, color: '#6b7280', marginTop: 2 },
   closeBtn: { padding: 4 },
@@ -146,23 +138,11 @@ const styles = StyleSheet.create({
   loadingText: { color: '#6b7280', marginTop: 12, fontSize: 15 },
   errorText: { color: '#ef4444', fontSize: 15, textAlign: 'center' },
   emptyText: { color: '#6b7280', fontSize: 15 },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    marginBottom: 4,
-  },
+  card: { backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 4 },
   pkgName: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 6 },
   pkgDesc: { fontSize: 14, color: '#6b7280', marginBottom: 6 },
   pkgCount: { fontSize: 12, color: '#9ca3af', marginBottom: 12 },
-  addBtn: {
-    backgroundColor: '#f97316',
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
+  addBtn: { backgroundColor: '#f97316', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   addBtnDisabled: { opacity: 0.6 },
   addBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
 });

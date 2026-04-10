@@ -7,9 +7,9 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { MealLibrary } from './MealLibrary';
-import { Quiz } from './Quiz';
-import type { User } from '../../src/types/index.ts';
+import MealLibrary from './MealLibrary';
+import Quiz from './Quiz';
+import type { User } from '../../src/types';
 
 interface DashboardProps {
   user: User;
@@ -19,7 +19,7 @@ interface DashboardProps {
 
 type Tab = 'library' | 'quiz';
 
-export function Dashboard({ user, onLogout, onUpdateUser }: DashboardProps) {
+export default function Dashboard({ user, onLogout, onUpdateUser }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('library');
 
   return (

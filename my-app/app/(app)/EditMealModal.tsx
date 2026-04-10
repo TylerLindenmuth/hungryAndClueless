@@ -10,7 +10,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import type { Meal } from '../../src/types/index.ts';
+import type { Meal } from '../../src/types';
 import {
   CATEGORIES,
   CUISINES,
@@ -18,7 +18,7 @@ import {
   FLAVOR_TAGS,
   TIME_OF_DAY_TAGS,
   COMMON_TAGS,
-} from '../../constants/mealConstants';
+} from '../../constants/MealConstants';
 
 interface EditMealModalProps {
   meal: Meal;
@@ -125,7 +125,7 @@ function TagSelector({
   );
 }
 
-export function EditMealModal({ meal, visible, onClose, onSave }: EditMealModalProps) {
+export default function EditMealModal({ meal, visible, onClose, onSave }: EditMealModalProps) {
   const [editedMeal, setEditedMeal] = useState<Meal>({ ...meal });
   const [newTag, setNewTag] = useState('');
   const [newFlavorTag, setNewFlavorTag] = useState('');
@@ -188,14 +188,12 @@ export function EditMealModal({ meal, visible, onClose, onSave }: EditMealModalP
             options={CATEGORIES}
             onSelect={v => setEditedMeal({ ...editedMeal, category: v })}
           />
-
           <PickerRow
             label="Cuisine"
             value={editedMeal.cuisine || ''}
             options={CUISINES}
             onSelect={v => setEditedMeal({ ...editedMeal, cuisine: v })}
           />
-
           <PickerRow
             label="Prep Time"
             value={editedMeal.prepTime || ''}
@@ -212,7 +210,6 @@ export function EditMealModal({ meal, visible, onClose, onSave }: EditMealModalP
             onCustomChange={setNewTimeTag}
             onCustomAdd={() => addCustomTag(newTimeTag, 'timeOfDayTags', setNewTimeTag)}
           />
-
           <TagSelector
             label="Flavor Tags"
             selected={editedMeal.flavorTags}
@@ -222,7 +219,6 @@ export function EditMealModal({ meal, visible, onClose, onSave }: EditMealModalP
             onCustomChange={setNewFlavorTag}
             onCustomAdd={() => addCustomTag(newFlavorTag, 'flavorTags', setNewFlavorTag)}
           />
-
           <TagSelector
             label="Dietary & Other Tags"
             selected={editedMeal.tags}
@@ -313,42 +309,16 @@ const styles = StyleSheet.create({
   dropdownItemText: { fontSize: 15, color: '#374151' },
   dropdownItemTextActive: { color: '#f97316', fontWeight: '600' },
   tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
-  tagActive: {
-    backgroundColor: '#f97316',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
+  tagActive: { backgroundColor: '#f97316', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
   tagActiveText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  tagInactive: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-  },
+  tagInactive: { backgroundColor: '#f3f4f6', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
   tagInactiveText: { color: '#374151', fontSize: 13 },
   customTagRow: { flexDirection: 'row', alignItems: 'center' },
-  addTagBtn: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
+  addTagBtn: { backgroundColor: '#f3f4f6', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12 },
   addTagBtnText: { fontSize: 14, color: '#374151', fontWeight: '600' },
   actionRow: { flexDirection: 'row', marginBottom: 40 },
-  button: {
-    backgroundColor: '#f97316',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
+  button: { backgroundColor: '#f97316', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  cancelButton: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 10,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
+  cancelButton: { backgroundColor: '#f3f4f6', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 14, alignItems: 'center' },
   cancelButtonText: { color: '#374151', fontSize: 16, fontWeight: '600' },
 });

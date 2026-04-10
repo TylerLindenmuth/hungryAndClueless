@@ -10,9 +10,13 @@
  *      Used by: screens, legacy components
  *
  * Both read from the same token map so they're always in sync.
+ *
+ * toggleTheme is provided by ThemeContext — useTheme() reads from it
+ * so the toggle works app-wide and persists across re-renders.
  */
 
-import { useColorScheme } from 'react-native';
+import { useContext } from 'react';
+import { ThemeContext } from './ThemeContext';
 import { lightTokens, darkTokens, TypeScale, type ThemeTokens } from './tokens';
 
 // ── colors sub-object shape ───────────────────────────────────────────────────
@@ -37,8 +41,6 @@ export interface ThemeColors {
   input: string;
   inputBackground: string;
   ring: string;
-
-  // add this line:
   switchBackground: string;
 }
 
@@ -52,6 +54,8 @@ export interface Theme {
   isDark: boolean;
   /** Typography scale: h1–h4, label, body, sm, xs, btn */
   type: typeof TypeScale;
+  /** Toggle between light and dark mode */
+  toggleTheme: () => void;
 
   // Flat shorthand aliases
   bg:          string;
@@ -74,41 +78,45 @@ export interface Theme {
 export type UseThemeReturn = Theme;
 
 export function useTheme(): Theme {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
+  const ctx = useContext(ThemeContext);
+
+  if (!ctx) {
+    throw new Error('useTheme must be used inside <ThemeProvider>');
+  }
+
+const { isDark, toggle: toggleTheme } = ctx;
   const t = isDark ? darkTokens : lightTokens;
 
-const colors: ThemeColors = {
-  background: t.background,
-  foreground: t.foreground,
-  card: t.card,
-  cardForeground: t.cardForeground,
-  popover: t.popover,
-  popoverForeground: t.popoverForeground,
-  primary: t.primary,
-  primaryForeground: t.primaryForeground,
-  secondary: t.secondary,
-  secondaryForeground: t.secondaryForeground,
-  muted: t.muted,
-  mutedForeground: t.mutedForeground,
-  accent: t.accent,
-  accentForeground: t.accentForeground,
-  destructive: t.destructive,
-  destructiveForeground: t.destructiveForeground,
-  border: t.border,
-  input: t.input,
-  inputBackground: t.inputBackground,
-  ring: t.ring,
-
-  // add this line:
-  switchBackground: t.switchBackground,
-};
+  const colors: ThemeColors = {
+    background:           t.background,
+    foreground:           t.foreground,
+    card:                 t.card,
+    cardForeground:       t.cardForeground,
+    popover:              t.popover,
+    popoverForeground:    t.popoverForeground,
+    primary:              t.primary,
+    primaryForeground:    t.primaryForeground,
+    secondary:            t.secondary,
+    secondaryForeground:  t.secondaryForeground,
+    muted:                t.muted,
+    mutedForeground:      t.mutedForeground,
+    accent:               t.accent,
+    accentForeground:     t.accentForeground,
+    destructive:          t.destructive,
+    destructiveForeground:t.destructiveForeground,
+    border:               t.border,
+    input:                t.input,
+    inputBackground:      t.inputBackground,
+    ring:                 t.ring,
+    switchBackground:     t.switchBackground,
+  };
 
   return {
     colors,
     t,
     isDark,
     type: TypeScale,
+    toggleTheme,
 
     bg:          t.background,
     card:        t.card,

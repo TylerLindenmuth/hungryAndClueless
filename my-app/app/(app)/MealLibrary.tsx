@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { buildPath } from '../../src/api';
-import { retrieveToken, storeToken, storeUser } from '../../src/lib/tokenStorage';
+import { retrieveToken, storeToken, storeUser } from '../../src/tokenStorage';
 import {
   CATEGORIES,
   CUISINES,
@@ -19,10 +19,10 @@ import {
   FLAVOR_TAGS,
   TIME_OF_DAY_TAGS,
   COMMON_TAGS,
-} from '../../constants/mealConstants';
-import { EditMealModal } from '../../src/components/EditMealModal';
-import { MealPackages } from './MealPackages';
-import type { Meal, User } from '../../src/types/index.ts';
+} from '../../constants/MealConstants';
+import EditMealModal from './EditMealModal';
+import MealPackages from './MealPackages';
+import type { Meal, User } from '../../src/types';
 
 interface MealLibraryProps {
   user: User;
@@ -128,7 +128,7 @@ function TagRow({
   );
 }
 
-export function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
+export default function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [showPackages, setShowPackages] = useState(false);
   const [editingMeal, setEditingMeal] = useState<Meal | null>(null);
@@ -314,7 +314,6 @@ export function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
 
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      {/* Header actions */}
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.secondaryBtn} onPress={() => setShowPackages(true)}>
           <Ionicons name="layers-outline" size={18} color="#374151" />
@@ -326,11 +325,8 @@ export function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
         </TouchableOpacity>
       </View>
 
-      {message ? (
-        <Text style={styles.message}>{message}</Text>
-      ) : null}
+      {message ? <Text style={styles.message}>{message}</Text> : null}
 
-      {/* Add meal form */}
       {showAddForm && (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>New Meal</Text>
@@ -346,56 +342,13 @@ export function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
             />
           </View>
 
-          <PickerRow
-            label="Category *"
-            value={newMeal.category}
-            options={CATEGORIES}
-            onSelect={v => setNewMeal({ ...newMeal, category: v })}
-          />
+          <PickerRow label="Category *" value={newMeal.category} options={CATEGORIES} onSelect={v => setNewMeal({ ...newMeal, category: v })} />
+          <PickerRow label="Cuisine" value={newMeal.cuisine} options={CUISINES} onSelect={v => setNewMeal({ ...newMeal, cuisine: v })} />
+          <PickerRow label="Prep Time" value={newMeal.prepTime} options={PREP_TIMES} onSelect={v => setNewMeal({ ...newMeal, prepTime: v })} />
 
-          <PickerRow
-            label="Cuisine"
-            value={newMeal.cuisine}
-            options={CUISINES}
-            onSelect={v => setNewMeal({ ...newMeal, cuisine: v })}
-          />
-
-          <PickerRow
-            label="Prep Time"
-            value={newMeal.prepTime}
-            options={PREP_TIMES}
-            onSelect={v => setNewMeal({ ...newMeal, prepTime: v })}
-          />
-
-          <TagRow
-            label="Time of Day"
-            tags={TIME_OF_DAY_TAGS}
-            selected={newMeal.timeOfDayTags}
-            onToggle={t => toggleTag(t, 'timeOfDayTags')}
-            custom={customTimeTag}
-            setCustom={setCustomTimeTag}
-            onAddCustom={() => addCustomTag(customTimeTag, 'timeOfDayTags', setCustomTimeTag)}
-          />
-
-          <TagRow
-            label="Flavors"
-            tags={FLAVOR_TAGS}
-            selected={newMeal.flavorTags}
-            onToggle={t => toggleTag(t, 'flavorTags')}
-            custom={customFlavorTag}
-            setCustom={setCustomFlavorTag}
-            onAddCustom={() => addCustomTag(customFlavorTag, 'flavorTags', setCustomFlavorTag)}
-          />
-
-          <TagRow
-            label="Dietary & Other Tags"
-            tags={COMMON_TAGS}
-            selected={newMeal.tags}
-            onToggle={t => toggleTag(t, 'tags')}
-            custom={customTag}
-            setCustom={setCustomTag}
-            onAddCustom={() => addCustomTag(customTag, 'tags', setCustomTag)}
-          />
+          <TagRow label="Time of Day" tags={TIME_OF_DAY_TAGS} selected={newMeal.timeOfDayTags} onToggle={t => toggleTag(t, 'timeOfDayTags')} custom={customTimeTag} setCustom={setCustomTimeTag} onAddCustom={() => addCustomTag(customTimeTag, 'timeOfDayTags', setCustomTimeTag)} />
+          <TagRow label="Flavors" tags={FLAVOR_TAGS} selected={newMeal.flavorTags} onToggle={t => toggleTag(t, 'flavorTags')} custom={customFlavorTag} setCustom={setCustomFlavorTag} onAddCustom={() => addCustomTag(customFlavorTag, 'flavorTags', setCustomFlavorTag)} />
+          <TagRow label="Dietary & Other Tags" tags={COMMON_TAGS} selected={newMeal.tags} onToggle={t => toggleTag(t, 'tags')} custom={customTag} setCustom={setCustomTag} onAddCustom={() => addCustomTag(customTag, 'tags', setCustomTag)} />
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Notes (optional)</Text>
@@ -422,7 +375,6 @@ export function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
         </View>
       )}
 
-      {/* Meal list */}
       {isLoading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#f97316" />
@@ -466,7 +418,6 @@ export function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
                       ))}
                     </View>
                   )}
-
                   {meal.flavorTags.length > 0 && (
                     <View style={styles.tagWrap}>
                       {meal.flavorTags.map(tag => (
@@ -476,7 +427,6 @@ export function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
                       ))}
                     </View>
                   )}
-
                   {meal.tags.length > 0 && (
                     <View style={styles.tagWrap}>
                       {meal.tags.map(tag => (
@@ -486,10 +436,7 @@ export function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
                       ))}
                     </View>
                   )}
-
-                  {meal.notes ? (
-                    <Text style={styles.mealNotes} numberOfLines={2}>{meal.notes}</Text>
-                  ) : null}
+                  {meal.notes ? <Text style={styles.mealNotes} numberOfLines={2}>{meal.notes}</Text> : null}
                 </View>
               ))}
           </View>
@@ -516,150 +463,51 @@ export function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  actionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10,
-    marginBottom: 16,
-  },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f97316',
-    borderRadius: 10,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 6,
-  },
+  actionsRow: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginBottom: 16 },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f97316', borderRadius: 10, paddingHorizontal: 16, paddingVertical: 10, gap: 6 },
   primaryBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
-  secondaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 6,
-  },
+  secondaryBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, gap: 6 },
   secondaryBtnText: { color: '#374151', fontWeight: '600', fontSize: 14 },
   message: { color: '#f97316', fontSize: 14, marginBottom: 12, fontWeight: '500' },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
+  card: { backgroundColor: '#fff', borderRadius: 14, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#e5e7eb' },
   sectionTitle: { fontSize: 18, fontWeight: '700', color: '#111827', marginBottom: 16 },
   inputGroup: { marginBottom: 16 },
   label: { fontSize: 13, fontWeight: '600', color: '#374151', marginBottom: 6 },
-  input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: '#111827',
-    backgroundColor: '#f9fafb',
-  },
+  input: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, color: '#111827', backgroundColor: '#f9fafb' },
   textarea: { height: 80, paddingTop: 10 },
-  picker: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    backgroundColor: '#f9fafb',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
+  picker: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: '#f9fafb', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   pickerText: { fontSize: 15, color: '#111827' },
   pickerPlaceholder: { fontSize: 15, color: '#9ca3af' },
-  dropdown: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    marginTop: 4,
-    zIndex: 10,
-  },
+  dropdown: { borderWidth: 1, borderColor: '#d1d5db', borderRadius: 10, backgroundColor: '#fff', marginTop: 4, zIndex: 10 },
   dropdownItem: { paddingHorizontal: 12, paddingVertical: 10 },
   dropdownItemActive: { backgroundColor: '#fff7ed' },
   dropdownText: { fontSize: 14, color: '#374151' },
   dropdownTextActive: { color: '#f97316', fontWeight: '600' },
   tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 8 },
-  tagActive: {
-    backgroundColor: '#f97316',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
+  tagActive: { backgroundColor: '#f97316', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
   tagActiveText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  tagInactive: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 20,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
+  tagInactive: { backgroundColor: '#f3f4f6', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
   tagInactiveText: { color: '#374151', fontSize: 12 },
   customRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  addTagBtn: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
+  addTagBtn: { backgroundColor: '#f3f4f6', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
   addTagBtnText: { fontSize: 14, color: '#374151', fontWeight: '600' },
   formActions: { flexDirection: 'row', marginTop: 4 },
   centered: { alignItems: 'center', justifyContent: 'center', paddingTop: 48 },
   emptyText: { color: '#6b7280', fontSize: 16, marginTop: 12 },
   emptySubtext: { color: '#9ca3af', fontSize: 14, marginTop: 6, textAlign: 'center' },
   categorySection: { marginBottom: 20 },
-  categoryTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#374151',
-    marginBottom: 8,
-    paddingBottom: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-  },
-  mealCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
+  categoryTitle: { fontSize: 16, fontWeight: '700', color: '#374151', marginBottom: 8, paddingBottom: 6, borderBottomWidth: 1, borderBottomColor: '#e5e7eb' },
+  mealCard: { backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#e5e7eb' },
   mealHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   mealName: { fontSize: 16, fontWeight: '700', color: '#111827' },
   mealMeta: { fontSize: 13, color: '#6b7280', marginTop: 2 },
   mealActions: { flexDirection: 'row', gap: 4 },
   iconBtn: { padding: 6 },
-  tagBadgePrimary: {
-    backgroundColor: '#fff7ed',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
+  tagBadgePrimary: { backgroundColor: '#fff7ed', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   tagBadgePrimaryText: { color: '#f97316', fontSize: 11, fontWeight: '600' },
-  tagBadgeSecondary: {
-    backgroundColor: '#f3f4f6',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
+  tagBadgeSecondary: { backgroundColor: '#f3f4f6', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   tagBadgeSecondaryText: { color: '#374151', fontSize: 11 },
-  tagBadgeAccent: {
-    backgroundColor: '#ecfdf5',
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
+  tagBadgeAccent: { backgroundColor: '#ecfdf5', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   tagBadgeAccentText: { color: '#065f46', fontSize: 11 },
   mealNotes: { fontSize: 12, color: '#9ca3af', marginTop: 6 },
 });

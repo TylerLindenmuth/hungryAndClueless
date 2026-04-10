@@ -5,16 +5,15 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import type { User, QuizAnswers } from '../../src/types/index.ts';
+import type { User, QuizAnswers } from '../../src/types';
 
 interface QuizProps {
   user: User;
 }
 
-export function Quiz({ user }: QuizProps) {
+export default function Quiz({ user }: QuizProps) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState<QuizAnswers>({});
   const [results, setResults] = useState<string[]>([]);
@@ -54,12 +53,12 @@ export function Quiz({ user }: QuizProps) {
   const filterMeals = (finalAnswers: QuizAnswers) => {
     let filtered = [...user.meals];
     if (finalAnswers.category) filtered = filtered.filter(m => m.category === finalAnswers.category);
-    if (finalAnswers.cuisine) filtered = filtered.filter(m => m.cuisine === finalAnswers.cuisine);
+    if (finalAnswers.cuisine)  filtered = filtered.filter(m => m.cuisine === finalAnswers.cuisine);
     if (finalAnswers.prepTime) {
       const timeMap: Record<string, string[]> = {
         'Quick (under 15min)': ['5min', '10min', '15min', 'quick'],
-        'Medium (15-30min)': ['20min', '25min', '30min'],
-        'Longer (30min+)': ['45min', '1hr', '1.5hr', '2hr', '3hr'],
+        'Medium (15-30min)':   ['20min', '25min', '30min'],
+        'Longer (30min+)':     ['45min', '1hr', '1.5hr', '2hr', '3hr'],
       };
       const validTimes = timeMap[finalAnswers.prepTime] || [];
       filtered = filtered.filter(m =>
@@ -138,7 +137,6 @@ export function Quiz({ user }: QuizProps) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentPadding}>
-      {/* Progress bar */}
       <View style={styles.progressMeta}>
         <Text style={styles.progressLabel}>Question {step + 1} of {questions.length}</Text>
         <Text style={styles.progressLabel}>{Math.round(progress)}%</Text>
@@ -176,89 +174,26 @@ const styles = StyleSheet.create({
   contentPadding: { padding: 16, paddingBottom: 40 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyText: { color: '#6b7280', fontSize: 16, textAlign: 'center', marginTop: 16 },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  resultCard: {
-    backgroundColor: '#f97316',
-    borderRadius: 16,
-    padding: 32,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
+  pageTitle: { fontSize: 24, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 20 },
+  resultCard: { backgroundColor: '#f97316', borderRadius: 16, padding: 32, alignItems: 'center', marginBottom: 20 },
   resultLabel: { color: '#fff', fontSize: 16, opacity: 0.9, marginBottom: 8 },
   resultMeal: { color: '#fff', fontSize: 28, fontWeight: '800', textAlign: 'center' },
-  optionsIntro: {
-    fontSize: 15,
-    color: '#374151',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
+  optionsIntro: { fontSize: 15, color: '#374151', textAlign: 'center', marginBottom: 16 },
   optionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  optionChip: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
+  optionChip: { backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: '#e5e7eb' },
   optionChipText: { color: '#374151', fontSize: 14, fontWeight: '500' },
   buttonRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 8 },
-  primaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f97316',
-    borderRadius: 12,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    gap: 8,
-    justifyContent: 'center',
-  },
+  primaryBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f97316', borderRadius: 12, paddingHorizontal: 20, paddingVertical: 14, gap: 8, justifyContent: 'center' },
   primaryBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
-  secondaryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 8,
-  },
+  secondaryBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f3f4f6', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, gap: 8 },
   secondaryBtnText: { color: '#374151', fontWeight: '600', fontSize: 15 },
   progressMeta: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 },
   progressLabel: { fontSize: 13, color: '#6b7280' },
-  progressTrack: {
-    height: 6,
-    backgroundColor: '#e5e7eb',
-    borderRadius: 999,
-    marginBottom: 32,
-    overflow: 'hidden',
-  },
+  progressTrack: { height: 6, backgroundColor: '#e5e7eb', borderRadius: 999, marginBottom: 32, overflow: 'hidden' },
   progressFill: { height: 6, backgroundColor: '#f97316', borderRadius: 999 },
-  question: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
+  question: { fontSize: 22, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 24 },
   optionsList: { gap: 12 },
-  optionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-  },
+  optionRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#fff', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 16, borderWidth: 1, borderColor: '#e5e7eb' },
   optionText: { fontSize: 16, color: '#111827' },
   backBtn: { alignItems: 'center', marginTop: 24 },
   backBtnText: { color: '#6b7280', fontSize: 15 },

@@ -38,7 +38,7 @@ interface ThemeContextType {
   isLoading: boolean;
 }
 
-const ThemeContext = createContext<ThemeContextType>({
+export const ThemeContext = createContext<ThemeContextType>({
   isDark: false,
   toggle: () => {},
   isLoading: true,

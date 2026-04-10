@@ -1,215 +1,293 @@
-import { useState } from 'react';
-import { Filter, X } from 'lucide-react';
-import type { Meal } from '../../src/lib/types';
-import { CATEGORIES, CUISINES, PREP_TIMES, FLAVOR_TAGS, TIME_OF_DAY_TAGS, COMMON_TAGS } from '../../src/lib/constants';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import type { Meal } from '../../src/types/index';
+import {
+  CATEGORIES,
+  CUISINES,
+  PREP_TIMES,
+  FLAVOR_TAGS,
+  TIME_OF_DAY_TAGS,
+  COMMON_TAGS,
+} from '../../constants/MealConstants';
+import { useTheme } from '../../src/theme/useTheme';
 
 interface MealFilterProps {
   meals: Meal[];
   onFilteredMeals: (meals: Meal[]) => void;
 }
 
+interface FilterState {
+  category: string;
+  cuisine: string;
+  prepTime: string;
+  flavorTags: string[];
+  timeOfDayTags: string[];
+  tags: string[];
+}
+
+const EMPTY_FILTERS: FilterState = {
+  category: '',
+  cuisine: '',
+  prepTime: '',
+  flavorTags: [],
+  timeOfDayTags: [],
+  tags: [],
+};
+
+// ── Mini picker ───────────────────────────────────────────────────────────────
+function FilterPicker({
+  label,
+  value,
+  options,
+  onSelect,
+  th,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onSelect: (v: string) => void;
+  th: ReturnType<typeof useTheme>;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={{ marginBottom: 12 }}>
+      <Text style={[styles.label, { color: th.text }]}>{label}</Text>
+      <TouchableOpacity
+        style={[styles.picker, { borderColor: th.border, backgroundColor: th.inputBg }]}
+        onPress={() => setOpen(o => !o)}
+      >
+        <Text style={{ color: value ? th.text : th.placeholder, fontSize: 14 }}>
+          {value || 'Any'}
+        </Text>
+        <Ionicons
+          name={open ? 'chevron-up' : 'chevron-down'}
+          size={16}
+          color={th.muted}
+        />
+      </TouchableOpacity>
+      {open && (
+        <View style={[styles.dropdown, { borderColor: th.border, backgroundColor: th.card }]}>
+          <ScrollView nestedScrollEnabled style={{ maxHeight: 160 }}>
+            {['', ...options].map((opt: string) => (
+              <TouchableOpacity
+                key={opt || '__any__'}
+                style={[
+                  styles.dropdownItem,
+                  opt === value && { backgroundColor: th.accent },
+                ]}
+                onPress={() => { onSelect(opt); setOpen(false); }}
+              >
+                <Text style={[
+                  styles.dropdownText,
+                  { color: opt === value ? th.accentText : th.text },
+                ]}>
+                  {opt || 'Any'}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+}
+
+// ── Tag chip row ──────────────────────────────────────────────────────────────
+function TagRow({
+  label,
+  tags,
+  selected,
+  onToggle,
+  th,
+}: {
+  label: string;
+  tags: string[];
+  selected: string[];
+  onToggle: (tag: string) => void;
+  th: ReturnType<typeof useTheme>;
+}) {
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <Text style={[styles.label, { color: th.text }]}>{label}</Text>
+      <View style={styles.chipWrap}>
+        {tags.map((tag: string) => {
+          const active = selected.includes(tag);
+          return (
+            <TouchableOpacity
+              key={tag}
+              style={[
+                styles.chip,
+                active
+                  ? { backgroundColor: th.primary }
+                  : { backgroundColor: th.secondary },
+              ]}
+              onPress={() => onToggle(tag)}
+            >
+              <Text style={[
+                styles.chipText,
+                { color: active ? th.primaryText : th.text },
+              ]}>
+                {tag}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+// ── Main component ────────────────────────────────────────────────────────────
 export function MealFilter({ meals, onFilteredMeals }: MealFilterProps) {
+  const th = useTheme();
   const [showFilters, setShowFilters] = useState(false);
-  const [filters, setFilters] = useState({
-    category: '',
-    cuisine: '',
-    prepTime: '',
-    flavorTags: [] as string[],
-    timeOfDayTags: [] as string[],
-    tags: [] as string[]
-  });
+  const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
+
+  const hasActiveFilters =
+    !!filters.category ||
+    !!filters.cuisine ||
+    !!filters.prepTime ||
+    filters.flavorTags.length > 0 ||
+    filters.timeOfDayTags.length > 0 ||
+    filters.tags.length > 0;
 
   const applyFilters = () => {
     let filtered = [...meals];
-
-    if (filters.category) {
-      filtered = filtered.filter(m => m.category === filters.category);
-    }
-
-    if (filters.cuisine) {
-      filtered = filtered.filter(m => m.cuisine === filters.cuisine);
-    }
-
-    if (filters.prepTime) {
-      filtered = filtered.filter(m => m.prepTime === filters.prepTime);
-    }
-
-    if (filters.flavorTags.length > 0) {
-      filtered = filtered.filter(m =>
-        filters.flavorTags.some(tag => m.flavorTags.includes(tag))
-      );
-    }
-
-    if (filters.timeOfDayTags.length > 0) {
-      filtered = filtered.filter(m =>
-        filters.timeOfDayTags.some(tag => m.timeOfDayTags.includes(tag))
-      );
-    }
-
-    if (filters.tags.length > 0) {
-      filtered = filtered.filter(m =>
-        filters.tags.some(tag => m.tags.includes(tag))
-      );
-    }
-
+    if (filters.category)   filtered = filtered.filter((m: Meal) => m.category === filters.category);
+    if (filters.cuisine)    filtered = filtered.filter((m: Meal) => m.cuisine === filters.cuisine);
+    if (filters.prepTime)   filtered = filtered.filter((m: Meal) => m.prepTime === filters.prepTime);
+    if (filters.flavorTags.length > 0)
+      filtered = filtered.filter((m: Meal) => filters.flavorTags.some((t: string) => m.flavorTags.includes(t)));
+    if (filters.timeOfDayTags.length > 0)
+      filtered = filtered.filter((m: Meal) => filters.timeOfDayTags.some((t: string) => m.timeOfDayTags.includes(t)));
+    if (filters.tags.length > 0)
+      filtered = filtered.filter((m: Meal) => filters.tags.some((t: string) => m.tags.includes(t)));
     onFilteredMeals(filtered);
   };
 
   const clearFilters = () => {
-    setFilters({
-      category: '',
-      cuisine: '',
-      prepTime: '',
-      flavorTags: [],
-      timeOfDayTags: [],
-      tags: []
-    });
+    setFilters(EMPTY_FILTERS);
     onFilteredMeals(meals);
   };
 
-  const toggleArrayFilter = (key: 'flavorTags' | 'timeOfDayTags' | 'tags', value: string) => {
+  const toggleArrayFilter = (
+    key: 'flavorTags' | 'timeOfDayTags' | 'tags',
+    value: string,
+  ) => {
     const current = filters[key];
-    if (current.includes(value)) {
-      setFilters({ ...filters, [key]: current.filter(t => t !== value) });
-    } else {
-      setFilters({ ...filters, [key]: [...current, value] });
-    }
+    setFilters({
+      ...filters,
+      [key]: current.includes(value)
+        ? current.filter((t: string) => t !== value)
+        : [...current, value],
+    });
   };
 
-  const hasActiveFilters = filters.category || filters.cuisine || filters.prepTime ||
-    filters.flavorTags.length > 0 || filters.timeOfDayTags.length > 0 || filters.tags.length > 0;
-
   return (
-    <div className="mb-4">
-      <div className="flex gap-2 items-center">
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2 px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-accent transition-colors"
+    <View style={styles.container}>
+      {/* Toggle row */}
+      <View style={styles.toggleRow}>
+        <TouchableOpacity
+          style={[styles.filterBtn, { backgroundColor: th.secondary }]}
+          onPress={() => setShowFilters(v => !v)}
         >
-          <Filter size={18} />
-          Filter Meals {hasActiveFilters && '(Active)'}
-        </button>
+          <Ionicons name="filter" size={16} color={th.text} />
+          <Text style={[styles.filterBtnText, { color: th.text }]}>
+            Filter Meals{hasActiveFilters ? ' (Active)' : ''}
+          </Text>
+        </TouchableOpacity>
+
         {hasActiveFilters && (
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Clear All
-          </button>
+          <TouchableOpacity style={styles.clearBtn} onPress={clearFilters}>
+            <Text style={[styles.clearBtnText, { color: th.muted }]}>Clear All</Text>
+          </TouchableOpacity>
         )}
-      </div>
+      </View>
 
+      {/* Expanded panel */}
       {showFilters && (
-        <div className="mt-4 bg-card border border-border rounded-lg p-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm text-foreground mb-2">Category</label>
-              <select
-                value={filters.category}
-                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-input-background text-foreground"
-              >
-                <option value="">Any</option>
-                {CATEGORIES.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+        <View style={[styles.panel, { backgroundColor: th.card, borderColor: th.border }]}>
+          <FilterPicker
+            label="Category"
+            value={filters.category}
+            options={CATEGORIES}
+            onSelect={(v: string) => setFilters({ ...filters, category: v })}
+            th={th}
+          />
+          <FilterPicker
+            label="Cuisine"
+            value={filters.cuisine}
+            options={CUISINES}
+            onSelect={(v: string) => setFilters({ ...filters, cuisine: v })}
+            th={th}
+          />
+          <FilterPicker
+            label="Prep Time"
+            value={filters.prepTime}
+            options={PREP_TIMES}
+            onSelect={(v: string) => setFilters({ ...filters, prepTime: v })}
+            th={th}
+          />
 
-            <div>
-              <label className="block text-sm text-foreground mb-2">Cuisine</label>
-              <select
-                value={filters.cuisine}
-                onChange={(e) => setFilters({ ...filters, cuisine: e.target.value })}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-input-background text-foreground"
-              >
-                <option value="">Any</option>
-                {CUISINES.map(cuisine => (
-                  <option key={cuisine} value={cuisine}>{cuisine}</option>
-                ))}
-              </select>
-            </div>
+          <TagRow
+            label="Time of Day"
+            tags={TIME_OF_DAY_TAGS}
+            selected={filters.timeOfDayTags}
+            onToggle={(tag: string) => toggleArrayFilter('timeOfDayTags', tag)}
+            th={th}
+          />
+          <TagRow
+            label="Flavors"
+            tags={FLAVOR_TAGS}
+            selected={filters.flavorTags}
+            onToggle={(tag: string) => toggleArrayFilter('flavorTags', tag)}
+            th={th}
+          />
+          <TagRow
+            label="Dietary & Other Tags"
+            tags={COMMON_TAGS}
+            selected={filters.tags}
+            onToggle={(tag: string) => toggleArrayFilter('tags', tag)}
+            th={th}
+          />
 
-            <div>
-              <label className="block text-sm text-foreground mb-2">Prep Time</label>
-              <select
-                value={filters.prepTime}
-                onChange={(e) => setFilters({ ...filters, prepTime: e.target.value })}
-                className="w-full px-3 py-2 border border-border rounded-lg bg-input-background text-foreground"
-              >
-                <option value="">Any</option>
-                {PREP_TIMES.map(time => (
-                  <option key={time} value={time}>{time}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-foreground mb-2">Time of Day</label>
-            <div className="flex flex-wrap gap-2">
-              {TIME_OF_DAY_TAGS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => toggleArrayFilter('timeOfDayTags', tag)}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    filters.timeOfDayTags.includes(tag)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-accent'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-foreground mb-2">Flavors</label>
-            <div className="flex flex-wrap gap-2">
-              {FLAVOR_TAGS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => toggleArrayFilter('flavorTags', tag)}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    filters.flavorTags.includes(tag)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-accent'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-foreground mb-2">Dietary & Other Tags</label>
-            <div className="flex flex-wrap gap-2">
-              {COMMON_TAGS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => toggleArrayFilter('tags', tag)}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                    filters.tags.includes(tag)
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-secondary text-secondary-foreground hover:bg-accent'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <button
-            onClick={applyFilters}
-            className="w-full bg-primary text-primary-foreground py-2 rounded-lg hover:opacity-90 transition-opacity"
+          <TouchableOpacity
+            style={[styles.applyBtn, { backgroundColor: th.primary }]}
+            onPress={applyFilters}
           >
-            Apply Filters
-          </button>
-        </div>
+            <Text style={[styles.applyBtnText, { color: th.primaryText }]}>
+              Apply Filters
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
-    </div>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container:      { marginBottom: 16 },
+  toggleRow:      { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  filterBtn:      { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10 },
+  filterBtnText:  { fontSize: 14, fontWeight: '600' },
+  clearBtn:       { paddingHorizontal: 10, paddingVertical: 10 },
+  clearBtnText:   { fontSize: 14 },
+  panel:          { marginTop: 12, borderWidth: 1, borderRadius: 14, padding: 16 },
+  label:          { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  picker:         { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  dropdown:       { borderWidth: 1, borderRadius: 10, marginTop: 4, overflow: 'hidden' },
+  dropdownItem:   { paddingHorizontal: 12, paddingVertical: 10 },
+  dropdownText:   { fontSize: 14 },
+  chipWrap:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip:           { borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  chipText:       { fontSize: 13, fontWeight: '500' },
+  applyBtn:       { borderRadius: 10, paddingVertical: 13, alignItems: 'center', marginTop: 8 },
+  applyBtnText:   { fontSize: 15, fontWeight: '700' },
+});

@@ -9,12 +9,11 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { jwtDecode } from 'jwt-decode';
 import { buildPath } from '../../src/api';
-import { storeToken, storeUser } from '../../src/lib/tokenStorage';
-import type { User } from '../../src/types/index.ts';
+import { storeToken, storeUser } from '../../src/tokenStorage';
+import type { User } from '../../src/types';
 
 interface JwtPayload {
   userId: string;
@@ -26,7 +25,7 @@ interface AuthPageProps {
   onLogin: (user: User) => void;
 }
 
-export function AuthPage({ onLogin }: AuthPageProps) {
+export default function AuthPage({ onLogin }: AuthPageProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -178,19 +177,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#111827',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
+  title: { fontSize: 24, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 6 },
+  subtitle: { fontSize: 14, color: '#6b7280', textAlign: 'center', marginBottom: 24 },
   inputGroup: { marginBottom: 16 },
   label: { fontSize: 14, color: '#374151', marginBottom: 6, fontWeight: '500' },
   input: {
@@ -204,21 +192,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
   },
   error: { color: '#ef4444', fontSize: 13, marginBottom: 12 },
-  button: {
-    backgroundColor: '#f97316',
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 4,
-  },
+  button: { backgroundColor: '#f97316', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
   buttonDisabled: { opacity: 0.6 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  switchRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 20,
-    flexWrap: 'wrap',
-  },
+  switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' },
   switchText: { fontSize: 14, color: '#6b7280' },
   switchLink: { fontSize: 14, color: '#f97316', fontWeight: '600' },
 });

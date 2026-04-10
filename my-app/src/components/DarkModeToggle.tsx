@@ -1,21 +1,30 @@
-// src/components/DarkModeToggle.tsx
-import { Moon, Sun } from 'lucide-react';
-import { useThemeMode } from '../theme/ThemeContext';
+import React from 'react';
+import { TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../theme/useTheme';
 
 export function DarkModeToggle() {
-  const { isDark, toggle } = useThemeMode();
+  const { isDark, toggleTheme, secondary, text } = useTheme();
 
   return (
-    <button
-      onClick={toggle}
-      className="p-2 rounded-lg bg-secondary hover:bg-accent transition-colors"
-      aria-label="Toggle dark mode"
+    <TouchableOpacity
+      onPress={toggleTheme}
+      style={[styles.btn, { backgroundColor: secondary }]}
+      accessibilityLabel="Toggle dark mode"
+      accessibilityRole="button"
     >
-      {isDark ? (
-        <Sun className="w-5 h-5 text-accent-foreground" />
-      ) : (
-        <Moon className="w-5 h-5 text-accent-foreground" />
-      )}
-    </button>
+      <Ionicons
+        name={isDark ? 'sunny-outline' : 'moon-outline'}
+        size={20}
+        color={text}
+      />
+    </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  btn: {
+    padding: 8,
+    borderRadius: 10,
+  },
+});
