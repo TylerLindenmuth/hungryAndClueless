@@ -7,6 +7,8 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../src/theme/useTheme';
+import DarkModeToggle from '../../src/components/DarkModeToggle';
 import MealLibrary from './MealLibrary';
 import Quiz from './Quiz';
 import type { User } from '../../src/types';
@@ -21,45 +23,46 @@ type Tab = 'library' | 'quiz';
 
 export default function Dashboard({ user, onLogout, onUpdateUser }: DashboardProps) {
   const [activeTab, setActiveTab] = useState<Tab>('library');
+  const { bg, card, text, muted, border, primary, secondary, toggleTheme, isDark } = useTheme(); // ← merged here
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.appTitle}>What Do I Want to Eat?</Text>
-          <Text style={styles.welcomeText}>Welcome back, {user.name}!</Text>
+      <View style={[styles.header, { backgroundColor: card, borderBottomColor: border }]}>
+        <View style={styles.headerLeft}>
+          <Text style={[styles.appTitle, { color: text }]}>What Do I Want to Eat?</Text>
+          <Text style={[styles.welcomeText, { color: muted }]}>Welcome back, {user.name}!</Text>
         </View>
-        <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
-          <Ionicons name="log-out-outline" size={22} color="#6b7280" />
-        </TouchableOpacity>
+        <View style={styles.headerRight}>
+          {/* Debug: shows current mode and forces a toggle */}
+          <Text style={{ color: text, fontSize: 11 }}>{isDark ? 'DARK' : 'LIGHT'}</Text>
+          <TouchableOpacity onPress={toggleTheme} style={{ padding: 8, backgroundColor: 'red', borderRadius: 6 }}>
+            <Text style={{ color: 'white', fontSize: 11 }}>TEST</Text>
+          </TouchableOpacity>
+          <DarkModeToggle />
+          <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
+            <Ionicons name="log-out-outline" size={22} color={muted} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tab bar */}
-      <View style={styles.tabBar}>
+      <View style={[styles.tabBar, { backgroundColor: card, borderBottomColor: border }]}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'library' && styles.tabActive]}
+          style={[styles.tab, { backgroundColor: secondary }, activeTab === 'library' && { backgroundColor: primary }]}
           onPress={() => setActiveTab('library')}
         >
-          <Ionicons
-            name="book-outline"
-            size={18}
-            color={activeTab === 'library' ? '#fff' : '#6b7280'}
-          />
-          <Text style={[styles.tabText, activeTab === 'library' && styles.tabTextActive]}>
+          <Ionicons name="book-outline" size={18} color={activeTab === 'library' ? '#fff' : muted} />
+          <Text style={[styles.tabText, { color: muted }, activeTab === 'library' && styles.tabTextActive]}>
             My Meals ({user.meals.length})
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'quiz' && styles.tabActive]}
+          style={[styles.tab, { backgroundColor: secondary }, activeTab === 'quiz' && { backgroundColor: primary }]}
           onPress={() => setActiveTab('quiz')}
         >
-          <Ionicons
-            name="help-circle-outline"
-            size={18}
-            color={activeTab === 'quiz' ? '#fff' : '#6b7280'}
-          />
-          <Text style={[styles.tabText, activeTab === 'quiz' && styles.tabTextActive]}>
+          <Ionicons name="help-circle-outline" size={18} color={activeTab === 'quiz' ? '#fff' : muted} />
+          <Text style={[styles.tabText, { color: muted }, activeTab === 'quiz' && styles.tabTextActive]}>
             What Should I Eat?
           </Text>
         </TouchableOpacity>
@@ -78,28 +81,30 @@ export default function Dashboard({ user, onLogout, onUpdateUser }: DashboardPro
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { flex: 1 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
   },
-  appTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  welcomeText: { fontSize: 13, color: '#6b7280', marginTop: 2 },
+  headerLeft: { flex: 1 },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  appTitle: { fontSize: 18, fontWeight: '500' },
+  welcomeText: { fontSize: 13, marginTop: 2 },
   logoutBtn: { padding: 8 },
   tabBar: {
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingVertical: 12,
     gap: 10,
-    backgroundColor: '#fff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
   },
   tab: {
     flex: 1,
@@ -109,10 +114,8 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#f3f4f6',
   },
-  tabActive: { backgroundColor: '#f97316' },
-  tabText: { fontSize: 13, fontWeight: '600', color: '#6b7280' },
-  tabTextActive: { color: '#fff' },
+  tabText: { fontSize: 13, fontWeight: '500' },
+  tabTextActive: { color: '#ffffff' },
   content: { flex: 1 },
 });

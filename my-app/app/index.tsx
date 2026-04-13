@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import AuthPage from './(auth)/AuthPage';
-import Dashboard  from './(app)/Dashboard';
+import Dashboard from './(app)/Dashboard';
 import { retrieveToken, retrieveUser, clearToken, storeUser } from '../src/tokenStorage';
-import type { User } from '../src/types/index.ts';
+import type { User } from '../src/types/index';
 
-export default function RootLayout() {
+export default function Index() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -25,9 +26,7 @@ export default function RootLayout() {
     restoreSession();
   }, []);
 
-  const handleLogin = (user: User) => {
-    setCurrentUser(user);
-  };
+  const handleLogin = (user: User) => setCurrentUser(user);
 
   const handleLogout = async () => {
     await clearToken();
@@ -42,7 +41,7 @@ export default function RootLayout() {
   if (isLoading) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#f97316" />
+        <ActivityIndicator size="large" color="#2563eb" />
       </View>
     );
   }
@@ -61,5 +60,5 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f9fafb' },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f8fafc' },
 });

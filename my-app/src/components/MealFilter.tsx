@@ -15,7 +15,7 @@ import {
   FLAVOR_TAGS,
   TIME_OF_DAY_TAGS,
   COMMON_TAGS,
-} from '../../constants/MealConstants';
+} from '../../constants/Mealconstants';
 import { useTheme } from '../../src/theme/useTheme';
 
 interface MealFilterProps {

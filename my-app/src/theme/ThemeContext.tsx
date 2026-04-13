@@ -46,11 +46,9 @@ export const ThemeContext = createContext<ThemeContextType>({
 
 // ── Provider ──────────────────────────────────────────────────────────────────
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemScheme = useColorScheme();       // 'dark' | 'light' | null
-  const systemDark   = systemScheme === 'dark';
-
-  // Start with system default so the first render is never wrong
-  const [isDark,           setIsDark]           = useState(systemDark);
+  const systemScheme = useColorScheme();
+  const systemDark = systemScheme === 'dark';
+  const [isDark, setIsDark] = useState(false);
   const [isLoading,        setIsLoading]        = useState(true);
   const [hasManualPref,    setHasManualPref]    = useState(false);
 

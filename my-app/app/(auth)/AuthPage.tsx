@@ -13,6 +13,7 @@ import {
 import { jwtDecode } from 'jwt-decode';
 import { buildPath } from '../../src/api';
 import { storeToken, storeUser } from '../../src/tokenStorage';
+import { useTheme } from '../../src/theme/useTheme';
 import type { User } from '../../src/types';
 
 interface JwtPayload {
@@ -26,6 +27,8 @@ interface AuthPageProps {
 }
 
 export default function AuthPage({ onLogin }: AuthPageProps) {
+  const { bg, card, text, muted, border, primary, inputBg, placeholder, destructive } = useTheme();
+
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -80,36 +83,36 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={styles.card}>
-          <Text style={styles.title}>What Do I Want to Eat?</Text>
-          <Text style={styles.subtitle}>Never be indecisive about meals again</Text>
+        <View style={[styles.card, { backgroundColor: card }]}>
+          <Text style={[styles.title, { color: text }]}>What Do I Want to Eat?</Text>
+          <Text style={[styles.subtitle, { color: muted }]}>Never be indecisive about meals again</Text>
 
           {!isLogin && (
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Name</Text>
+              <Text style={[styles.label, { color: text }]}>Name</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { borderColor: border, backgroundColor: inputBg, color: text }]}
                 value={name}
                 onChangeText={setName}
                 placeholder="Your name"
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={placeholder}
                 autoCapitalize="words"
               />
             </View>
           )}
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+            <Text style={[styles.label, { color: text }]}>Email</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderColor: border, backgroundColor: inputBg, color: text }]}
               value={email}
               onChangeText={setEmail}
               placeholder="your@email.com"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={placeholder}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -117,27 +120,27 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
+            <Text style={[styles.label, { color: text }]}>Password</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderColor: border, backgroundColor: inputBg, color: text }]}
               value={password}
               onChangeText={setPassword}
               placeholder="••••••••"
-              placeholderTextColor="#9ca3af"
+              placeholderTextColor={placeholder}
               secureTextEntry
               autoCapitalize="none"
             />
           </View>
 
-          {error ? <Text style={styles.error}>{error}</Text> : null}
+          {error ? <Text style={[styles.error, { color: destructive }]}>{error}</Text> : null}
 
           <TouchableOpacity
-            style={[styles.button, isSubmitting && styles.buttonDisabled]}
+            style={[styles.button, { backgroundColor: primary }, isSubmitting && styles.buttonDisabled]}
             onPress={handleSubmit}
             disabled={isSubmitting}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#ffffff" />
             ) : (
               <Text style={styles.buttonText}>
                 {isLogin ? 'Login' : 'Sign Up'}
@@ -146,16 +149,13 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
           </TouchableOpacity>
 
           <View style={styles.switchRow}>
-            <Text style={styles.switchText}>
+            <Text style={[styles.switchText, { color: muted }]}>
               {isLogin ? "Don't have an account? " : 'Already have an account? '}
             </Text>
-            <TouchableOpacity
-              onPress={() => {
-                setIsLogin(!isLogin);
-                setError('');
-              }}
-            >
-              <Text style={styles.switchLink}>{isLogin ? 'Sign up' : 'Login'}</Text>
+            <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setError(''); }}>
+              <Text style={[styles.switchLink, { color: primary }]}>
+                {isLogin ? 'Sign up' : 'Login'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -165,37 +165,33 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
+  container: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
   card: {
-    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 28,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 4,
   },
-  title: { fontSize: 24, fontWeight: '700', color: '#111827', textAlign: 'center', marginBottom: 6 },
-  subtitle: { fontSize: 14, color: '#6b7280', textAlign: 'center', marginBottom: 24 },
+  title: { fontSize: 24, fontWeight: '500', textAlign: 'center', marginBottom: 6 },
+  subtitle: { fontSize: 14, textAlign: 'center', marginBottom: 24 },
   inputGroup: { marginBottom: 16 },
-  label: { fontSize: 14, color: '#374151', marginBottom: 6, fontWeight: '500' },
+  label: { fontSize: 14, marginBottom: 6, fontWeight: '500' },
   input: {
     borderWidth: 1,
-    borderColor: '#d1d5db',
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     fontSize: 16,
-    color: '#111827',
-    backgroundColor: '#f9fafb',
   },
-  error: { color: '#ef4444', fontSize: 13, marginBottom: 12 },
-  button: { backgroundColor: '#f97316', borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
+  error: { fontSize: 13, marginBottom: 12 },
+  button: { borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
   buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  buttonText: { color: '#ffffff', fontSize: 16, fontWeight: '500' },
   switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' },
-  switchText: { fontSize: 14, color: '#6b7280' },
-  switchLink: { fontSize: 14, color: '#f97316', fontWeight: '600' },
+  switchText: { fontSize: 14 },
+  switchLink: { fontSize: 14, fontWeight: '500' },
 });

@@ -3,7 +3,7 @@ import { TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/useTheme';
 
-export function DarkModeToggle() {
+export default function DarkModeToggle() {
   const { isDark, toggleTheme, secondary, text } = useTheme();
 
   return (

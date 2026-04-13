@@ -89,7 +89,7 @@ export default function MealPackages({ visible, onClose, onAddPackage }: MealPac
         <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
           {isLoading ? (
             <View style={styles.centered}>
-              <ActivityIndicator size="large" color="#f97316" />
+              <ActivityIndicator size="large" color="#2563eb" />
               <Text style={styles.loadingText}>Loading packages...</Text>
             </View>
           ) : error ? (
@@ -127,22 +127,22 @@ export default function MealPackages({ visible, onClose, onAddPackage }: MealPac
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16, borderBottomWidth: 1, borderBottomColor: '#e5e7eb', backgroundColor: '#fff' },
-  title: { fontSize: 20, fontWeight: '700', color: '#111827' },
-  subtitle: { fontSize: 13, color: '#6b7280', marginTop: 2 },
+  container: { flex: 1, backgroundColor: '#f8fafc' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', padding: 16, borderBottomWidth: 1, borderBottomColor: '#cbd5e1', backgroundColor: '#ffffff' },
+  title: { fontSize: 20, fontWeight: '500', color: '#0f172a' },
+  subtitle: { fontSize: 13, color: '#64748b', marginTop: 2 },
   closeBtn: { padding: 4 },
   scroll: { flex: 1 },
   scrollContent: { padding: 16, gap: 12 },
   centered: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
-  loadingText: { color: '#6b7280', marginTop: 12, fontSize: 15 },
-  errorText: { color: '#ef4444', fontSize: 15, textAlign: 'center' },
-  emptyText: { color: '#6b7280', fontSize: 15 },
-  card: { backgroundColor: '#fff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#e5e7eb', marginBottom: 4 },
-  pkgName: { fontSize: 17, fontWeight: '700', color: '#111827', marginBottom: 6 },
-  pkgDesc: { fontSize: 14, color: '#6b7280', marginBottom: 6 },
-  pkgCount: { fontSize: 12, color: '#9ca3af', marginBottom: 12 },
-  addBtn: { backgroundColor: '#f97316', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
+  loadingText: { color: '#64748b', marginTop: 12, fontSize: 15 },
+  errorText: { color: '#dc2626', fontSize: 15, textAlign: 'center' },  // --destructive
+  emptyText: { color: '#64748b', fontSize: 15 },
+  card: { backgroundColor: '#ffffff', borderRadius: 14, padding: 16, borderWidth: 1, borderColor: '#cbd5e1', marginBottom: 4 },
+  pkgName: { fontSize: 17, fontWeight: '500', color: '#0f172a', marginBottom: 6 },
+  pkgDesc: { fontSize: 14, color: '#64748b', marginBottom: 6 },
+  pkgCount: { fontSize: 12, color: '#94a3b8', marginBottom: 12 },
+  addBtn: { backgroundColor: '#2563eb', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },  // --primary
   addBtnDisabled: { opacity: 0.6 },
-  addBtnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  addBtnText: { color: '#ffffff', fontSize: 15, fontWeight: '500' },
 });

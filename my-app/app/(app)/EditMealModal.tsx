@@ -18,7 +18,7 @@ import {
   FLAVOR_TAGS,
   TIME_OF_DAY_TAGS,
   COMMON_TAGS,
-} from '../../constants/MealConstants';
+} from '../../constants/Mealconstants';
 
 interface EditMealModalProps {
   meal: Meal;
@@ -28,15 +28,9 @@ interface EditMealModalProps {
 }
 
 function PickerRow({
-  label,
-  value,
-  options,
-  onSelect,
+  label, value, options, onSelect,
 }: {
-  label: string;
-  value: string;
-  options: string[];
-  onSelect: (v: string) => void;
+  label: string; value: string; options: string[]; onSelect: (v: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -46,15 +40,12 @@ function PickerRow({
         <Text style={value ? styles.pickerText : styles.pickerPlaceholder}>
           {value || `Select ${label.toLowerCase()}`}
         </Text>
-        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color="#6b7280" />
+        <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={18} color="#64748b" />
       </TouchableOpacity>
       {open && (
         <View style={styles.dropdown}>
           <ScrollView nestedScrollEnabled style={{ maxHeight: 180 }}>
-            <TouchableOpacity
-              style={styles.dropdownItem}
-              onPress={() => { onSelect(''); setOpen(false); }}
-            >
+            <TouchableOpacity style={styles.dropdownItem} onPress={() => { onSelect(''); setOpen(false); }}>
               <Text style={styles.dropdownItemText}>— None —</Text>
             </TouchableOpacity>
             {options.map(opt => (
@@ -76,21 +67,10 @@ function PickerRow({
 }
 
 function TagSelector({
-  label,
-  selected,
-  options,
-  onToggle,
-  customValue,
-  onCustomChange,
-  onCustomAdd,
+  label, selected, options, onToggle, customValue, onCustomChange, onCustomAdd,
 }: {
-  label: string;
-  selected: string[];
-  options: string[];
-  onToggle: (tag: string) => void;
-  customValue: string;
-  onCustomChange: (v: string) => void;
-  onCustomAdd: () => void;
+  label: string; selected: string[]; options: string[]; onToggle: (tag: string) => void;
+  customValue: string; onCustomChange: (v: string) => void; onCustomAdd: () => void;
 }) {
   return (
     <View style={styles.inputGroup}>
@@ -133,17 +113,10 @@ export default function EditMealModal({ meal, visible, onClose, onSave }: EditMe
 
   const toggleTag = (tag: string, field: 'tags' | 'flavorTags' | 'timeOfDayTags') => {
     const current = editedMeal[field];
-    setEditedMeal({
-      ...editedMeal,
-      [field]: current.includes(tag) ? current.filter(t => t !== tag) : [...current, tag],
-    });
+    setEditedMeal({ ...editedMeal, [field]: current.includes(tag) ? current.filter(t => t !== tag) : [...current, tag] });
   };
 
-  const addCustomTag = (
-    val: string,
-    field: 'tags' | 'flavorTags' | 'timeOfDayTags',
-    setter: (v: string) => void
-  ) => {
+  const addCustomTag = (val: string, field: 'tags' | 'flavorTags' | 'timeOfDayTags', setter: (v: string) => void) => {
     const trimmed = val.trim();
     if (trimmed && !editedMeal[field].includes(trimmed)) {
       setEditedMeal({ ...editedMeal, [field]: [...editedMeal[field], trimmed] });
@@ -166,7 +139,7 @@ export default function EditMealModal({ meal, visible, onClose, onSave }: EditMe
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>Edit Meal</Text>
           <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-            <Ionicons name="close" size={24} color="#374151" />
+            <Ionicons name="close" size={24} color="#0f172a" />
           </TouchableOpacity>
         </View>
 
@@ -182,52 +155,13 @@ export default function EditMealModal({ meal, visible, onClose, onSave }: EditMe
             />
           </View>
 
-          <PickerRow
-            label="Category *"
-            value={editedMeal.category}
-            options={CATEGORIES}
-            onSelect={v => setEditedMeal({ ...editedMeal, category: v })}
-          />
-          <PickerRow
-            label="Cuisine"
-            value={editedMeal.cuisine || ''}
-            options={CUISINES}
-            onSelect={v => setEditedMeal({ ...editedMeal, cuisine: v })}
-          />
-          <PickerRow
-            label="Prep Time"
-            value={editedMeal.prepTime || ''}
-            options={PREP_TIMES}
-            onSelect={v => setEditedMeal({ ...editedMeal, prepTime: v })}
-          />
+          <PickerRow label="Category *" value={editedMeal.category} options={CATEGORIES} onSelect={v => setEditedMeal({ ...editedMeal, category: v })} />
+          <PickerRow label="Cuisine" value={editedMeal.cuisine || ''} options={CUISINES} onSelect={v => setEditedMeal({ ...editedMeal, cuisine: v })} />
+          <PickerRow label="Prep Time" value={editedMeal.prepTime || ''} options={PREP_TIMES} onSelect={v => setEditedMeal({ ...editedMeal, prepTime: v })} />
 
-          <TagSelector
-            label="Time of Day"
-            selected={editedMeal.timeOfDayTags}
-            options={TIME_OF_DAY_TAGS}
-            onToggle={tag => toggleTag(tag, 'timeOfDayTags')}
-            customValue={newTimeTag}
-            onCustomChange={setNewTimeTag}
-            onCustomAdd={() => addCustomTag(newTimeTag, 'timeOfDayTags', setNewTimeTag)}
-          />
-          <TagSelector
-            label="Flavor Tags"
-            selected={editedMeal.flavorTags}
-            options={FLAVOR_TAGS}
-            onToggle={tag => toggleTag(tag, 'flavorTags')}
-            customValue={newFlavorTag}
-            onCustomChange={setNewFlavorTag}
-            onCustomAdd={() => addCustomTag(newFlavorTag, 'flavorTags', setNewFlavorTag)}
-          />
-          <TagSelector
-            label="Dietary & Other Tags"
-            selected={editedMeal.tags}
-            options={COMMON_TAGS}
-            onToggle={tag => toggleTag(tag, 'tags')}
-            customValue={newTag}
-            onCustomChange={setNewTag}
-            onCustomAdd={() => addCustomTag(newTag, 'tags', setNewTag)}
-          />
+          <TagSelector label="Time of Day" selected={editedMeal.timeOfDayTags} options={TIME_OF_DAY_TAGS} onToggle={tag => toggleTag(tag, 'timeOfDayTags')} customValue={newTimeTag} onCustomChange={setNewTimeTag} onCustomAdd={() => addCustomTag(newTimeTag, 'timeOfDayTags', setNewTimeTag)} />
+          <TagSelector label="Flavor Tags" selected={editedMeal.flavorTags} options={FLAVOR_TAGS} onToggle={tag => toggleTag(tag, 'flavorTags')} customValue={newFlavorTag} onCustomChange={setNewFlavorTag} onCustomAdd={() => addCustomTag(newFlavorTag, 'flavorTags', setNewFlavorTag)} />
+          <TagSelector label="Dietary & Other Tags" selected={editedMeal.tags} options={COMMON_TAGS} onToggle={tag => toggleTag(tag, 'tags')} customValue={newTag} onCustomChange={setNewTag} onCustomAdd={() => addCustomTag(newTag, 'tags', setNewTag)} />
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Notes</Text>
@@ -258,67 +192,46 @@ export default function EditMealModal({ meal, visible, onClose, onSave }: EditMe
 }
 
 const styles = StyleSheet.create({
-  modalContainer: { flex: 1, backgroundColor: '#f9fafb' },
+  modalContainer: { flex: 1, backgroundColor: '#f8fafc' },          // --background
   modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    backgroundColor: '#fff',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    padding: 16, borderBottomWidth: 1, borderBottomColor: '#cbd5e1', // --border
+    backgroundColor: '#ffffff',                                       // --card
   },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#111827' },
+  modalTitle: { fontSize: 20, fontWeight: '500', color: '#0f172a' }, // --foreground
   closeBtn: { padding: 4 },
   modalScroll: { padding: 16 },
   inputGroup: { marginBottom: 20 },
-  label: { fontSize: 14, fontWeight: '600', color: '#374151', marginBottom: 8 },
+  label: { fontSize: 14, fontWeight: '500', color: '#0f172a', marginBottom: 8 },   // --foreground
   input: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#111827',
-    backgroundColor: '#fff',
+    borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10,         // --border
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: 15,
+    color: '#0f172a', backgroundColor: '#ffffff',                     // --foreground, --input-background
   },
   textarea: { height: 100, paddingTop: 12 },
   picker: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10,         // --border
+    paddingHorizontal: 14, paddingVertical: 12, backgroundColor: '#ffffff',
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
   },
-  pickerText: { fontSize: 15, color: '#111827' },
+  pickerText: { fontSize: 15, color: '#0f172a' },                    // --foreground
   pickerPlaceholder: { fontSize: 15, color: '#9ca3af' },
-  dropdown: {
-    borderWidth: 1,
-    borderColor: '#d1d5db',
-    borderRadius: 10,
-    backgroundColor: '#fff',
-    marginTop: 4,
-  },
+  dropdown: { borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 10, backgroundColor: '#ffffff', marginTop: 4 },
   dropdownItem: { paddingHorizontal: 14, paddingVertical: 11 },
-  dropdownItemActive: { backgroundColor: '#fff7ed' },
-  dropdownItemText: { fontSize: 15, color: '#374151' },
-  dropdownItemTextActive: { color: '#f97316', fontWeight: '600' },
+  dropdownItemActive: { backgroundColor: '#dbeafe' },                 // --accent
+  dropdownItemText: { fontSize: 15, color: '#0f172a' },              // --foreground
+  dropdownItemTextActive: { color: '#1e40af', fontWeight: '600' },   // --accent-foreground
   tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10 },
-  tagActive: { backgroundColor: '#f97316', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  tagActiveText: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  tagInactive: { backgroundColor: '#f3f4f6', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
-  tagInactiveText: { color: '#374151', fontSize: 13 },
+  tagActive: { backgroundColor: '#2563eb', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },    // --primary
+  tagActiveText: { color: '#ffffff', fontSize: 13, fontWeight: '500' },                                      // --primary-foreground
+  tagInactive: { backgroundColor: '#e2e8f0', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 }, // --secondary
+  tagInactiveText: { color: '#0f172a', fontSize: 13 },               // --secondary-foreground
   customTagRow: { flexDirection: 'row', alignItems: 'center' },
-  addTagBtn: { backgroundColor: '#f3f4f6', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12 },
-  addTagBtnText: { fontSize: 14, color: '#374151', fontWeight: '600' },
+  addTagBtn: { backgroundColor: '#e2e8f0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12 },  // --secondary
+  addTagBtnText: { fontSize: 14, color: '#0f172a', fontWeight: '500' },
   actionRow: { flexDirection: 'row', marginBottom: 40 },
-  button: { backgroundColor: '#f97316', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  cancelButton: { backgroundColor: '#f3f4f6', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 14, alignItems: 'center' },
-  cancelButtonText: { color: '#374151', fontSize: 16, fontWeight: '600' },
+  button: { backgroundColor: '#2563eb', borderRadius: 10, paddingVertical: 14, alignItems: 'center' },      // --primary
+  buttonText: { color: '#ffffff', fontSize: 16, fontWeight: '500' },
+  cancelButton: { backgroundColor: '#e2e8f0', borderRadius: 10, paddingHorizontal: 20, paddingVertical: 14, alignItems: 'center' }, // --secondary
+  cancelButtonText: { color: '#0f172a', fontSize: 16, fontWeight: '500' },
 });
