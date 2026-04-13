@@ -1,9 +1,10 @@
-require('express');
-require('mongodb');
 require('dotenv').config();
 
 const jwt = require('jsonwebtoken');
 const JWT_SECRET = process.env.JWT_SECRET;
+
+const { ObjectId } = require('mongodb');
+const bcrypt = require('bcrypt');
 
 exports.setApp = function ( app, client )
 {
@@ -28,7 +29,6 @@ exports.setApp = function ( app, client )
 			}
 
 			// Hash password
-			const bcrypt = require('bcrypt');
 			const hashedpwd = await bcrypt.hash(password, 10);
 
 			// Insert new user
@@ -38,16 +38,16 @@ exports.setApp = function ( app, client )
 				password: hashedpwd
 			});
 
-			const userId = result._id;
+			const userId = result._id.toString();
 
 			// Create token
 			const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '1h' });
 
-			res.status(200).json({ accessToken: token, error: '' });
+			return res.status(200).json({ accessToken: token, error: '' });
 
 		} catch (e) {
 			error = e.toString();
-			res.status(500).json({ accessToken: '', error });
+			return res.status(500).json({ accessToken: '', error });
 		}
 	});
 	
@@ -70,7 +70,6 @@ exports.setApp = function ( app, client )
                 return res.status(401).json({ accessToken: '', error: 'Invalid credentials' });
             }
 
-            const bcrypt = require('bcrypt');
             const isMatch = await bcrypt.compare(password, user.password);
 
             if (!isMatch) {
@@ -78,41 +77,48 @@ exports.setApp = function ( app, client )
             }
 
 			const token = jwt.sign(
-				{ userId: user._id, email: user.email },
+				{ userId: user._id.toString(), email: user.email },
 				JWT_SECRET,
 				{ expiresIn: '1h' }
 			);
 
-			res.status(200).json({ accessToken: token, error: '' });
+			return res.status(200).json({ accessToken: token, error: '' });
 
 		} catch (e) {
 			error = e.toString();
-			res.status(500).json({ accessToken: '', error });
+			return res.status(500).json({ accessToken: '', error });
 		}
 	});
 
-    app.post('/api/addMeal', async (req, res, next) => {
+    app.post('/api/addMeal', async (req, res) => {
 
-        //incoming: { userId, meal, jwtToken }
-        //outgoing: { error, jwtToken }
+        //incoming: { userId, meal, accessToken }
+        //outgoing: { error, accessToken }
 
-        const { userId, meal, jwtToken } = req.body;
+        const { userId, meal, accessToken } = req.body;
 
-		if(!userId || !meal || !jwtToken) {
-			return res.status(400).json({accessToken: '', error: 'Missing fields'});
+		if(!userId || !meal || !accessToken) {
+			return res.status(400).json({error: 'Missing fields', accessToken: ''});
 		}
 
-        const newMeal = {meal:meal, userId:userId};
+        const newMeal = {
+            meal: meal,
+            userId: new ObjectId(userId)
+        };
 
         let error = '';
 		let decoded;
 
         try {
-            //Decode and verify jwtToken
-			decoded = jwt.verify(jwtToken, JWT_SECRET);
+            //Decode and verify token
+			decoded = jwt.verify(accessToken, JWT_SECRET);
+        } catch(e) {
+            return res.status(401).json({ error: 'Invalid or expired token', accessToken: ''})
+        }
 
-            if (decoded.userId.toString() !== userId) {
-                return res.status(403).json({error: 'User mismatch', jwtToken: jwtToken});
+        try {
+            if (decoded.userId !== userId) {
+                return res.status(403).json({error: 'User mismatch', accessToken: ''});
             }
 
             //Connect to DB and insert new meal
@@ -125,41 +131,56 @@ exports.setApp = function ( app, client )
 				{ expiresIn: '1h' }
 			);
 
-			res.status(200).json({ error: '', jwtToken: newToken });
+			return res.status(200).json({ error: '', accessToken: newToken });
 
         } catch(e) {
             error = e.toString();
-			res.status(500).json({ error: error, jwtToken: jwtToken });
+			return res.status(500).json({ error: error, accessToken: ''});
 		} 
     });
 
-    app.post('/api/deleteMeal', async (req, res, next) => {
+    app.post('/api/deleteMeal', async (req, res) => {
 
-        //incoming: { userId, mealId, jwtToken }
-        //outgoing: { error, jwtToken }
+        //incoming: { userId, mealId, accessToken }
+        //outgoing: { error, accessToken }
 
-        const { userId, mealId, jwtToken } = req.body;
+        const { userId, mealId, accessToken } = req.body;
 
-		if(!userId || !mealId || !jwtToken) {
-			return res.status(400).json({accessToken: '', error: 'Missing fields'});
+		if(!userId || !mealId || !accessToken) {
+			return res.status(400).json({error: 'Missing fields', accessToken: ''});
 		}
+
+        //Ensure that mealId is a valid object identifier
+        if (!ObjectId.isValid(mealId)) {
+            return res.status(400).json({error: 'Invalid mealId', accessToken: ''});
+        }
 
         let error = '';
 		let decoded;
 
         try {
-            //Decode and verify jwtToken
-			decoded = jwt.verify(jwtToken, JWT_SECRET);
+            //Decode and verify token
+			decoded = jwt.verify(accessToken, JWT_SECRET);
+        } catch(e) {
+            return res.status(401).json({ error: 'Invalid or expired token', accessToken: ''})
+        }
 
+        try {
             if (decoded.userId !== userId) {
-                return res.status(403).json({error: 'User mismatch', jwtToken: jwtToken});
+                return res.status(403).json({error: 'User mismatch', accessToken: ''});
             }
 
             //Connect to DB and delete meal matching mealId
             const db = client.db('MernProject');
 
-			const { ObjectId } = require('mongodb');
-			const result = await db.collection('meals').deleteOne({ _id: new ObjectId(mealId) });
+			const result = await db.collection('meals').deleteOne({
+                _id: new ObjectId(mealId),
+                userId: new ObjectId(decoded.userId)
+            });
+
+            if (result.deletedCount === 0) {
+                return res.status(404).json({ error: 'Meal not found', accessToken: '' });
+            }
 
 			const newToken = jwt.sign(
 				{ userId: decoded.userId, email: decoded.email },
@@ -167,11 +188,11 @@ exports.setApp = function ( app, client )
 				{ expiresIn: '1h' }
 			);
 
-			res.status(200).json({ error: '', jwtToken: newToken });
+			return res.status(200).json({ error: '', accessToken: newToken });
 
         } catch(e) {
             error = e.toString();
-			res.status(500).json({ error: error, jwtToken: jwtToken });
+			return res.status(500).json({ error: error, accessToken: ''});
         }
     });
 }
