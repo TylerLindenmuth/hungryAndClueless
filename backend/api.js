@@ -299,4 +299,60 @@ exports.setApp = function ( app, client )
 			return res.status(500).json({ meals: [], error: error, jwtToken: ''});
 		}
 	});
+
+	app.put('/api/editmeal', async (req, res) => {
+
+		//incoming: { userId, mealId, meal, jwtToken }
+		//outgoing: { error, jwtToken }
+
+		const { userId, mealId, meal, jwtToken } = req.body;
+
+		if (!ObjectId.isValid(userId)) {
+			return res.status(400).json({ error: 'Invalid userId', jwtToken: '' });
+		}
+
+        let error = '';
+		let decoded;
+
+        try {
+            //Decode and verify token
+			decoded = jwt.verify(jwtToken, JWT_SECRET);
+        } catch {
+            return res.status(401).json({ error: 'Invalid or expired token', jwtToken: ''});
+        }
+
+        try {
+            if (decoded.userId !== userId) {
+                return res.status(403).json({error: 'User mismatch', jwtToken: ''});
+            }
+
+            //Connect to DB
+            const db = client.db('MernProject');
+
+			const updates = { ...meal };
+			delete updates._id;
+			delete updates.userId;
+
+			const result = await db.collection('meals').updateOne(
+				{ _id: new ObjectId(mealId), userId: new ObjectId(userId) },
+				{ $set: updates }
+			);
+
+			if (result.matchedCount === 0) {
+				return res.status(404).json({ error: 'Meal not found', jwtToken: '' });
+			}
+
+            const newToken = jwt.sign(
+				{ userId: decoded.userId, email: decoded.email },
+				JWT_SECRET,
+				{ expiresIn: '1h' }
+			);
+
+			return res.status(200).json({ error: '', jwtToken: newToken });
+
+        } catch(e) {
+            error = e.toString();
+			return res.status(500).json({ error: error, jwtToken: ''});
+		}
+	});
 }
