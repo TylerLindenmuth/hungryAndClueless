@@ -90,15 +90,19 @@ exports.setApp = function ( app, client )
 		}
 	});
 
-    app.post('/api/addMeal', async (req, res) => {
+    app.post('/api/addmeal', async (req, res) => {
 
-        //incoming: { userId, meal, accessToken }
-        //outgoing: { error, accessToken }
+        //incoming: { userId, meal, jwtToken }
+        //outgoing: { error, jwtToken }
 
-        const { userId, meal, accessToken } = req.body;
+        const { userId, meal, jwtToken } = req.body;
 
-		if(!userId || !meal || !accessToken) {
-			return res.status(400).json({error: 'Missing fields', accessToken: ''});
+		if(!userId || !meal || !jwtToken) {
+			return res.status(400).json({error: 'Missing fields', jwtToken: ''});
+		}
+
+		if (!ObjectId.isValid(userId)) {
+			return res.status(400).json({ error: 'Invalid userId', jwtToken: '' });
 		}
 
         const newMeal = {
@@ -111,14 +115,14 @@ exports.setApp = function ( app, client )
 
         try {
             //Decode and verify token
-			decoded = jwt.verify(accessToken, JWT_SECRET);
-        } catch(e) {
-            return res.status(401).json({ error: 'Invalid or expired token', accessToken: ''})
+			decoded = jwt.verify(jwtToken, JWT_SECRET);
+        } catch {
+            return res.status(401).json({ error: 'Invalid or expired token', jwtToken: ''});
         }
 
         try {
             if (decoded.userId !== userId) {
-                return res.status(403).json({error: 'User mismatch', accessToken: ''});
+                return res.status(403).json({error: 'User mismatch', jwtToken: ''});
             }
 
             //Connect to DB and insert new meal
@@ -131,28 +135,32 @@ exports.setApp = function ( app, client )
 				{ expiresIn: '1h' }
 			);
 
-			return res.status(200).json({ error: '', accessToken: newToken });
+			return res.status(200).json({ error: '', jwtToken: newToken });
 
         } catch(e) {
             error = e.toString();
-			return res.status(500).json({ error: error, accessToken: ''});
+			return res.status(500).json({ error: error, jwtToken: ''});
 		} 
     });
 
-    app.post('/api/deleteMeal', async (req, res) => {
+    app.post('/api/deletemeal', async (req, res) => {
 
-        //incoming: { userId, mealId, accessToken }
-        //outgoing: { error, accessToken }
+        //incoming: { userId, mealId, jwtToken }
+        //outgoing: { error, jwtToken }
 
-        const { userId, mealId, accessToken } = req.body;
+        const { userId, mealId, jwtToken } = req.body;
 
-		if(!userId || !mealId || !accessToken) {
-			return res.status(400).json({error: 'Missing fields', accessToken: ''});
+		if(!userId || !mealId || !jwtToken) {
+			return res.status(400).json({error: 'Missing fields', jwtToken: ''});
+		}
+
+		if (!ObjectId.isValid(userId)) {
+			return res.status(400).json({ error: 'Invalid userId', jwtToken: '' });
 		}
 
         //Ensure that mealId is a valid object identifier
         if (!ObjectId.isValid(mealId)) {
-            return res.status(400).json({error: 'Invalid mealId', accessToken: ''});
+            return res.status(400).json({error: 'Invalid mealId', jwtToken: ''});
         }
 
         let error = '';
@@ -160,14 +168,14 @@ exports.setApp = function ( app, client )
 
         try {
             //Decode and verify token
-			decoded = jwt.verify(accessToken, JWT_SECRET);
-        } catch(e) {
-            return res.status(401).json({ error: 'Invalid or expired token', accessToken: ''})
+			decoded = jwt.verify(jwtToken, JWT_SECRET);
+        } catch {
+            return res.status(401).json({ error: 'Invalid or expired token', jwtToken: ''});
         }
 
         try {
             if (decoded.userId !== userId) {
-                return res.status(403).json({error: 'User mismatch', accessToken: ''});
+                return res.status(403).json({error: 'User mismatch', jwtToken: ''});
             }
 
             //Connect to DB and delete meal matching mealId
@@ -179,7 +187,7 @@ exports.setApp = function ( app, client )
             });
 
             if (result.deletedCount === 0) {
-                return res.status(404).json({ error: 'Meal not found', accessToken: '' });
+                return res.status(404).json({ error: 'Meal not found', jwtToken: '' });
             }
 
 			const newToken = jwt.sign(
@@ -188,11 +196,122 @@ exports.setApp = function ( app, client )
 				{ expiresIn: '1h' }
 			);
 
-			return res.status(200).json({ error: '', accessToken: newToken });
+			return res.status(200).json({ error: '', jwtToken: newToken });
 
         } catch(e) {
             error = e.toString();
-			return res.status(500).json({ error: error, accessToken: ''});
+			return res.status(500).json({ error: error, jwtToken: ''});
         }
     });
+
+	app.post('/api/addmeals', async (req, res) => {
+
+		//incoming: { userId, meals[], jwtToken }
+		//returns: { error, jwtToken }
+
+		const { userId, meals, jwtToken } = req.body;
+
+		if(!userId || !Array.isArray(meals) || meals.length === 0 || !jwtToken) {
+			return res.status(400).json({error: 'Missing fields', jwtToken: ''});
+		}
+		if (!meals.every(meal => typeof meal === 'object' && meal !== null)) {
+			return res.status(400).json({ error: 'Invalid meal array format', jwtToken: '' });
+		}
+
+		if (!ObjectId.isValid(userId)) {
+			return res.status(400).json({ error: 'Invalid userId', jwtToken: '' });
+		}
+
+		let error = '';
+		let decoded;
+
+		try {
+			//Decode and verify token
+			decoded = jwt.verify(jwtToken, JWT_SECRET);
+		} catch {
+			return res.status(401).json({ error: 'Invalid or expired token', jwtToken: ''});
+		}
+
+		try {
+			if (decoded.userId !== userId) {
+				return res.status(403).json({error: 'User mismatch', jwtToken: ''});
+			}
+
+			//Connect to DB
+			const db = client.db('MernProject');
+
+			const mealList = meals.map(meal => ({
+				...meal,
+				userId: new ObjectId(userId)
+			}));
+			
+			const result = await db.collection('meals').insertMany(mealList, { ordered: false });
+
+			if(result.insertedCount !== meals.length) {
+				return res.status(500).json({ error: 'Error inserting meals', jwtToken: '' });
+			}
+
+			const newToken = jwt.sign(
+				{ userId: decoded.userId, email: decoded.email },
+				JWT_SECRET,
+				{ expiresIn: '1h' }
+			);
+
+			return res.status(200).json({ error: '', jwtToken: newToken });
+
+		} catch(e) {
+			error = e.toString();
+			return res.status(500).json({ error: error, jwtToken: ''});
+		}
+	});
+
+	app.post('/api/getmeals', async (req, res) => {
+		
+		//incoming: { userId, jwtToken }
+		//outgoing: { meals[], error, jwtToken }
+
+		const { userId, jwtToken } = req.body;
+
+		if(!userId || !jwtToken) {
+			return res.status(400).json({meals: [], error: 'Missing fields', jwtToken: ''});
+		}
+
+		if (!ObjectId.isValid(userId)) {
+			return res.status(400).json({ error: 'Invalid userId', jwtToken: '' });
+		}
+
+		let error = '';
+		let decoded;
+
+		try {
+			//Decode and verify token
+			decoded = jwt.verify(jwtToken, JWT_SECRET);
+		} catch {
+			return res.status(401).json({ error: 'Invalid or expired token', jwtToken: ''});
+		}
+
+		try {
+			if (decoded.userId !== userId) {
+                return res.status(403).json({error: 'User mismatch', jwtToken: ''});
+            }
+
+            //Connect to DB
+            const db = client.db('MernProject');
+
+			//Collect all meals matching userId
+			const mealList = await db.collection('meals').find({ userId: new ObjectId(userId) }).toArray();
+
+			const newToken = jwt.sign(
+				{ userId: decoded.userId, email: decoded.email },
+				JWT_SECRET,
+				{ expiresIn: '1h' }
+			);
+
+			return res.status(200).json({ meals: mealList, error: '', jwtToken: newToken });
+
+		} catch(e) {
+			error = e.toString();
+			return res.status(500).json({ meals: [], error: error, jwtToken: ''});
+		}
+	});
 }
