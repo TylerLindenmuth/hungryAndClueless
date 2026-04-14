@@ -97,10 +97,6 @@ exports.setApp = function ( app, client )
 
         const { userId, meal, jwtToken } = req.body;
 
-		if(!userId || !meal || !jwtToken) {
-			return res.status(400).json({error: 'Missing fields', jwtToken: ''});
-		}
-
 		if (!ObjectId.isValid(userId)) {
 			return res.status(400).json({ error: 'Invalid userId', jwtToken: '' });
 		}
@@ -149,10 +145,6 @@ exports.setApp = function ( app, client )
         //outgoing: { error, jwtToken }
 
         const { userId, mealId, jwtToken } = req.body;
-
-		if(!userId || !mealId || !jwtToken) {
-			return res.status(400).json({error: 'Missing fields', jwtToken: ''});
-		}
 
 		if (!ObjectId.isValid(userId)) {
 			return res.status(400).json({ error: 'Invalid userId', jwtToken: '' });
@@ -211,9 +203,6 @@ exports.setApp = function ( app, client )
 
 		const { userId, meals, jwtToken } = req.body;
 
-		if(!userId || !Array.isArray(meals) || meals.length === 0 || !jwtToken) {
-			return res.status(400).json({error: 'Missing fields', jwtToken: ''});
-		}
 		if (!meals.every(meal => typeof meal === 'object' && meal !== null)) {
 			return res.status(400).json({ error: 'Invalid meal array format', jwtToken: '' });
 		}
@@ -271,10 +260,6 @@ exports.setApp = function ( app, client )
 		//outgoing: { meals[], error, jwtToken }
 
 		const { userId, jwtToken } = req.body;
-
-		if(!userId || !jwtToken) {
-			return res.status(400).json({meals: [], error: 'Missing fields', jwtToken: ''});
-		}
 
 		if (!ObjectId.isValid(userId)) {
 			return res.status(400).json({ error: 'Invalid userId', jwtToken: '' });
