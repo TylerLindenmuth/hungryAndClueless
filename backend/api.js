@@ -38,7 +38,7 @@ exports.setApp = function ( app, client )
 				password: hashedpwd
 			});
 
-			const userId = result._id.toString();
+			const userId = result.insertedId.toString();
 
 			// Create token
 			const token = jwt.sign({ userId, email }, JWT_SECRET, { expiresIn: '1h' });
