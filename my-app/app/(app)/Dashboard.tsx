@@ -26,7 +26,7 @@ export default function Dashboard({ user, onLogout, onUpdateUser }: DashboardPro
   const { bg, card, text, muted, border, primary, secondary, toggleTheme, isDark } = useTheme(); // ← merged here
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: bg }]}>
+    <SafeAreaView style={[styles.container]}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: card, borderBottomColor: border }]}>
         <View style={styles.headerLeft}>
@@ -81,7 +81,7 @@ export default function Dashboard({ user, onLogout, onUpdateUser }: DashboardPro
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

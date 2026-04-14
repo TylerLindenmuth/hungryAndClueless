@@ -14,7 +14,10 @@ import { jwtDecode } from 'jwt-decode';
 import { buildPath } from '../../src/api';
 import { storeToken, storeUser } from '../../src/tokenStorage';
 import { useTheme } from '../../src/theme/useTheme';
+import { ScreenWrapper } from '../../src/components/ScreenWrapper';
 import type { User } from '../../src/types';
+
+// ─── Types ─────────────────────────────────────────────
 
 interface JwtPayload {
   userId: string;
@@ -26,42 +29,87 @@ interface AuthPageProps {
   onLogin: (user: User) => void;
 }
 
+type ViewMode = 'auth' | 'forgotPassword' | 'forgotPasswordSuccess';
+
+// ─── Component ─────────────────────────────────────────
+
 export default function AuthPage({ onLogin }: AuthPageProps) {
   const { bg, card, text, muted, border, primary, inputBg, placeholder, destructive } = useTheme();
 
+  const [viewMode, setViewMode] = useState<ViewMode>('auth');
   const [isLogin, setIsLogin] = useState(true);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotError, setForgotError] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
+
+  // ─── helpers ─────────────────────────────
+
+  const switchMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setEmail('');
+    setPassword('');
+    setName('');
+  };
+
+  const validateEmail = (value: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+
+  const goToForgotPassword = () => {
+    setForgotEmail(email);
+    setForgotError('');
+    setViewMode('forgotPassword');
+  };
+
+  const goBackToAuth = () => {
+    setError('');
+    setViewMode('auth');
+  };
+
+  // ─── submit auth ─────────────────────────
+
   const handleSubmit = async () => {
     setError('');
+
     if (!email || !password || (!isLogin && !name)) {
       setError('Please fill in all fields');
       return;
     }
 
     setIsSubmitting(true);
+
     try {
       const route = isLogin ? 'api/login' : 'api/register';
-      const body = isLogin ? { email, password } : { name, email, password };
 
       const response = await fetch(buildPath(route), {
         method: 'POST',
-        body: JSON.stringify(body),
+        body: JSON.stringify(
+          isLogin
+            ? { email, password }
+            : { name, email, password }
+        ),
         headers: { 'Content-Type': 'application/json' },
       });
 
       const res = await response.json();
-      if (res.error && res.error.length > 0) {
+
+      if (res.error) {
         setError(res.error);
         return;
       }
 
       const { accessToken } = res;
+
       await storeToken(accessToken);
+
       const decoded = jwtDecode<JwtPayload>(accessToken);
 
       const user: User = {
@@ -73,125 +121,192 @@ export default function AuthPage({ onLogin }: AuthPageProps) {
 
       await storeUser(user);
       onLogin(user);
-    } catch (err: any) {
+    } catch {
       setError('Something went wrong. Please try again.');
-      console.log(err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: bg }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <View style={[styles.card, { backgroundColor: card }]}>
-          <Text style={[styles.title, { color: text }]}>What Do I Want to Eat?</Text>
-          <Text style={[styles.subtitle, { color: muted }]}>Never be indecisive about meals again</Text>
+  // ─── forgot password ─────────────────────
 
-          {!isLogin && (
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: text }]}>Name</Text>
+  const handleForgotPassword = async () => {
+    setForgotError('');
+
+    if (!forgotEmail) {
+      setForgotError('Please enter your email address.');
+      return;
+    }
+
+    if (!validateEmail(forgotEmail)) {
+      setForgotError('Please enter a valid email address.');
+      return;
+    }
+
+    setIsSendingReset(true);
+
+    try {
+      await fetch(buildPath('api/forgot-password'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: forgotEmail.trim().toLowerCase() }),
+      });
+
+      setViewMode('forgotPasswordSuccess');
+    } catch {
+      setForgotError('Network error. Please try again.');
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
+  // ─── UI: SUCCESS ─────────────────────────
+
+  if (viewMode === 'forgotPasswordSuccess') {
+    return (
+      <ScreenWrapper>
+        <KeyboardAvoidingView style={[styles.container]} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView contentContainerStyle={styles.scroll}>
+            <View style={[styles.card, { backgroundColor: card }]}>
+              <Text style={[styles.title, { color: text }]}>Check Your Email</Text>
+
+              <Text style={[styles.subtitle, { color: muted }]}>
+                If an account exists for {forgotEmail}, a reset link will be sent.
+              </Text>
+
+              <TouchableOpacity style={[styles.button, { backgroundColor: primary }]} onPress={goBackToAuth}>
+                <Text style={styles.buttonText}>Back to Login</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </ScreenWrapper>
+    );
+  }
+
+  // ─── UI: FORGOT PASSWORD ────────────────
+
+  if (viewMode === 'forgotPassword') {
+    return (
+      <ScreenWrapper>
+        <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView contentContainerStyle={styles.scroll}>
+            <View style={[styles.card, { backgroundColor: card }]}>
+              <Text style={[styles.title, { color: text }]}>Reset Password</Text>
+
               <TextInput
                 style={[styles.input, { borderColor: border, backgroundColor: inputBg, color: text }]}
+                value={forgotEmail}
+                onChangeText={setForgotEmail}
+                placeholder="Email"
+                placeholderTextColor={placeholder}
+              />
+
+              {!!forgotError && (
+                <Text style={[styles.error, { color: destructive }]}>{forgotError}</Text>
+              )}
+
+              <TouchableOpacity
+                style={[styles.button, { backgroundColor: primary }]}
+                onPress={handleForgotPassword}
+                disabled={isSendingReset}
+              >
+                {isSendingReset ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Send Reset Link</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={goBackToAuth}>
+                <Text style={[styles.switchLink, { color: primary }]}>← Back</Text>
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </ScreenWrapper>
+    );
+  }
+
+  // ─── UI: AUTH ───────────────────────────
+
+  return (
+    <ScreenWrapper>
+      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scroll}>
+          <View style={[styles.card, { backgroundColor: card }]}>
+            <Text style={[styles.title, { color: text }]}>What Do I Want to Eat?</Text>
+
+            {!isLogin && (
+              <TextInput
+                style={[styles.input, { borderColor: border, backgroundColor: inputBg, color: text }]}
+                placeholder="Name"
+                placeholderTextColor={placeholder}
                 value={name}
                 onChangeText={setName}
-                placeholder="Your name"
-                placeholderTextColor={placeholder}
-                autoCapitalize="words"
               />
-            </View>
-          )}
+            )}
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: text }]}>Email</Text>
             <TextInput
               style={[styles.input, { borderColor: border, backgroundColor: inputBg, color: text }]}
+              placeholder="Email"
+              placeholderTextColor={placeholder}
               value={email}
               onChangeText={setEmail}
-              placeholder="your@email.com"
-              placeholderTextColor={placeholder}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
             />
-          </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={[styles.label, { color: text }]}>Password</Text>
             <TextInput
               style={[styles.input, { borderColor: border, backgroundColor: inputBg, color: text }]}
-              value={password}
-              onChangeText={setPassword}
-              placeholder="••••••••"
+              placeholder="Password"
               placeholderTextColor={placeholder}
               secureTextEntry
-              autoCapitalize="none"
+              value={password}
+              onChangeText={setPassword}
             />
-          </View>
 
-          {error ? <Text style={[styles.error, { color: destructive }]}>{error}</Text> : null}
-
-          <TouchableOpacity
-            style={[styles.button, { backgroundColor: primary }, isSubmitting && styles.buttonDisabled]}
-            onPress={handleSubmit}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <ActivityIndicator color="#ffffff" />
-            ) : (
-              <Text style={styles.buttonText}>
-                {isLogin ? 'Login' : 'Sign Up'}
-              </Text>
+            {isLogin && (
+              <TouchableOpacity onPress={goToForgotPassword}>
+                <Text style={[styles.switchLink, { color: primary }]}>Forgot password?</Text>
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
 
-          <View style={styles.switchRow}>
-            <Text style={[styles.switchText, { color: muted }]}>
-              {isLogin ? "Don't have an account? " : 'Already have an account? '}
-            </Text>
-            <TouchableOpacity onPress={() => { setIsLogin(!isLogin); setError(''); }}>
+            {!!error && <Text style={[styles.error, { color: destructive }]}>{error}</Text>}
+
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: primary }]}
+              onPress={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>{isLogin ? 'Login' : 'Sign Up'}</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={switchMode}>
               <Text style={[styles.switchLink, { color: primary }]}>
-                {isLogin ? 'Sign up' : 'Login'}
+                {isLogin ? 'Create account' : 'Back to login'}
               </Text>
             </TouchableOpacity>
           </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ScreenWrapper>
   );
 }
 
+// ─── styles ───────────────────────────────
+
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: 'transparent' },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  card: {
-    borderRadius: 16,
-    padding: 28,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  title: { fontSize: 24, fontWeight: '500', textAlign: 'center', marginBottom: 6 },
-  subtitle: { fontSize: 14, textAlign: 'center', marginBottom: 24 },
-  inputGroup: { marginBottom: 16 },
-  label: { fontSize: 14, marginBottom: 6, fontWeight: '500' },
-  input: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 16,
-  },
-  error: { fontSize: 13, marginBottom: 12 },
-  button: { borderRadius: 10, paddingVertical: 14, alignItems: 'center', marginTop: 4 },
-  buttonDisabled: { opacity: 0.6 },
-  buttonText: { color: '#ffffff', fontSize: 16, fontWeight: '500' },
-  switchRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 20, flexWrap: 'wrap' },
-  switchText: { fontSize: 14 },
-  switchLink: { fontSize: 14, fontWeight: '500' },
+  card: { borderRadius: 16, padding: 24 },
+  title: { fontSize: 22, textAlign: 'center', marginBottom: 16 },
+  subtitle: { textAlign: 'center', marginBottom: 16 },
+  input: { borderWidth: 1, borderRadius: 10, padding: 12, marginBottom: 12 },
+  button: { padding: 14, borderRadius: 10, alignItems: 'center', marginTop: 8 },
+  buttonText: { color: '#fff', fontWeight: '500' },
+  error: { marginBottom: 10 },
+  switchLink: { textAlign: 'center', marginTop: 12, fontWeight: '500' },
 });
