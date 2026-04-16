@@ -273,26 +273,25 @@ export default function MealLibrary({ user, onUpdateUser }: MealLibraryProps) {
   };
 
   const handleAddPackage = async (meals: Meal[]) => {
-    try {
-      const token = await retrieveToken();
-      const response = await fetch(buildPath('api/addmeals'), {
-        method: 'POST',
-        body: JSON.stringify({ userId: user.id, meals, jwtToken: token }),
-        headers: { 'Content-Type': 'application/json' },
-      });
-      const res = await response.json();
-      if (res.error && res.error.length > 0) {
-        setMessage('Error adding package: ' + res.error);
-        return;
-      }
-      if (res.jwtToken) await storeToken(res.jwtToken);
-      const updatedUser = { ...user, meals: [...user.meals, ...meals] };
-      await storeUser(updatedUser);
-      onUpdateUser(updatedUser);
-    } catch (e: any) {
-      setMessage('Error adding package.');
+  try {
+    const token = await retrieveToken();
+    const response = await fetch(buildPath('api/addmeals'), {
+      method: 'POST',
+      body: JSON.stringify({ userId: user.id, meals, jwtToken: token }),
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const res = await response.json();
+    if (res.error && res.error.length > 0) {
+      setMessage('Error adding package: ' + res.error);
+      return;
     }
-  };
+    if (res.jwtToken) await storeToken(res.jwtToken);
+    await fetchMeals();
+    setShowPackages(false);
+  } catch (e: any) {
+    setMessage('Error adding package.');
+  }
+};
 
   const toggleTag = (tag: string, field: 'tags' | 'flavorTags' | 'timeOfDayTags') => {
     const current = newMeal[field];
