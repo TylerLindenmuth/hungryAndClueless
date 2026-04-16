@@ -19,7 +19,7 @@ exports.setApp = function ( app, client )
 		let error = '';
 
 		try {
-			const db = client.db('MernProject');
+			const db = client.db('mealApp');
 
 			// Check if user exists
 			const existingUser = await db.collection('users').findOne({ email: email });
@@ -61,7 +61,7 @@ exports.setApp = function ( app, client )
 		let error = '';
 
 		try {
-			const db = client.db('MernProject');
+			const db = client.db('mealApp');
 
 			// Hash password
 			const user = await db.collection('users').findOne({ email });
@@ -126,7 +126,7 @@ exports.setApp = function ( app, client )
             }
 
             //Connect to DB and insert new meal
-            const db = client.db('MernProject');
+            const db = client.db('mealApp');
             const result = await db.collection('meals').insertOne(newMeal);
 
             const newToken = jwt.sign(
@@ -179,7 +179,7 @@ exports.setApp = function ( app, client )
             }
 
             //Connect to DB and delete meal matching mealId
-            const db = client.db('MernProject');
+            const db = client.db('mealApp');
 
 			const result = await db.collection('meals').deleteOne({
                 _id: new ObjectId(mealId),
@@ -239,14 +239,15 @@ exports.setApp = function ( app, client )
 			}
 
 			//Connect to DB
-			const db = client.db('MernProject');
+			const db = client.db('mealApp');
 
-			const mealList = meals.map(meal => ({
+			const mealList = meals.map(({ _id, ...meal }) => ({
 				...meal,
+				package: null,
 				userId: new ObjectId(userId)
 			}));
 			
-			const result = await db.collection('meals').insertMany(mealList, { ordered: false });
+			const result = await db.collection('meals').insertMany(mealList);
 
 			if(result.insertedCount !== meals.length) {
 				return res.status(500).json({ error: 'Error inserting meals', jwtToken: '' });
@@ -297,7 +298,7 @@ exports.setApp = function ( app, client )
             }
 
             //Connect to DB
-            const db = client.db('MernProject');
+            const db = client.db('mealApp');
 
 			//Collect all meals matching userId
 			const mealList = await db.collection('meals').find({ userId: new ObjectId(userId) }).toArray();
@@ -347,7 +348,7 @@ exports.setApp = function ( app, client )
             }
 
             //Connect to DB
-            const db = client.db('MernProject');
+            const db = client.db('mealApp');
 
 			const updates = { ...meal };
 
@@ -405,7 +406,7 @@ exports.setApp = function ( app, client )
 
         try {
             //Connect to DB
-            const db = client.db('MernProject');
+            const db = client.db('mealApp');
 
             const pkgNames = ["healthyAndQuick", "comfortFood", "takeoutFavorites", "lazyMeals", "specialDiet"];
             const pkgDesc = ["Healthy and quick meals!", "Classic comfort foods", "Best food for eating in!",
